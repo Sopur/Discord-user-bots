@@ -1,0 +1,16 @@
+{
+  "name": "discord-user-bots",
+  "version": "v1",
+  "description": "I library that allows you tuse the full potential of Discords api to create good user bots.",
+  "main": "src/exports.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Sopur",
+  "license": "GNU",
+  "dependencies": {
+    "node-fetch": "^2.6.1",
+    "ws": "^7.4.3"
+  }
+}
