@@ -132,7 +132,7 @@ this._trace = user._trace; // Stringified json
 
 ```
 
-# Now here are thoes Properties in a more readable form:
+# Now here are those properties in a more readable form:
 ```js
 
 this.user_settings = {
