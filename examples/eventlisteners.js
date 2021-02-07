@@ -24,3 +24,7 @@ client.on.sessions_replace = function (sessions) { }; // Will be used when sessi
 client.on.message_read = function (message) { }; // Will be used when you/the client read a message
 
 client.on.channel_update = function (channel) { }; // Will be used when a channel is updated
+
+client.on.guild_join = function (guild) { }; // Will be used when a guild is added to your user
+
+client.on.guild_leave = function (guild) { }; // Will be used when a guild is removed from your user

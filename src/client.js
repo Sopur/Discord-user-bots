@@ -32,14 +32,14 @@ class Client {
             sessions_replace: function (message) { },
             message_read: function (message) { },
             channel_update: function (message) { },
+            guild_join: function (message) { },
+            guild_leave: function (message) { },
 
             /* I'll add these later...
             channel_create: function (message) { },
             channel_delete: function (message) { },
             channel_pins_update: function (message) { },
-            guild_create: function (message) { },
             guild_update: function (message) { },
-            guild_delete: function (message) { },
             guild_ban_add: function (message) { },
             guild_ban_remove: function (message) { },
             guild_emojis_update: function (message) { },
@@ -155,6 +155,13 @@ class Client {
                     this.on.channel_update(message.d);
                     break;
                 }
+                case "GUILD_CREATE": {
+                    this.on.guild_join(message.d);
+                    break;
+                }
+                case "GUILD_DELETE": {
+                    this.on.guild_leave(message.d);
+                }
 
             };
         });
@@ -163,6 +170,7 @@ class Client {
 
     async fetchmessages(limit, channelid) {
         if (this.ready_status === 0) return new Error("Client still in connecting state.");
+        if (!limit || !channelid) return new Error("Invalid parameters");
         return new Promise((res, rej) => {
             fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/messages?limit=${limit}`, {
                 "headers": {
@@ -180,13 +188,94 @@ class Client {
                 "mode": "cors",
                 "credentials": "include"
             }).then((response) => {
-                res(true);
+                response.json().then(m => {
+                    res(m);
+                });
+            });
+        });
+    };
+
+    async getguild(guildid) {
+        if (this.ready_status === 0) return new Error("Client still in connecting state.");
+        if (!guildid) return new Error("Invalid parameters");
+        return new Promise((res, rej) => {
+            fetch(`https://discord.com/api/${this.config.api}/guilds/${guildid}`, {
+                "headers": {
+                    "accept": "*/*",
+                    "accept-language": this.config.language,
+                    "authorization": this.token,
+                    "sec-fetch-dest": "empty",
+                    "sec-fetch-mode": "cors",
+                    "sec-fetch-site": "same-origin",
+                },
+                "referrer": `https://discord.com/channels/@me`,
+                "referrerPolicy": "no-referrer-when-downgrade",
+                "body": null,
+                "method": "GET",
+                "mode": "cors",
+                "credentials": "include"
+            }).then((response) => {
+                response.json().then(m => {
+                    res(m);
+                });
+            });
+        });
+    };
+
+    async join_guild(invite, trim = false) {
+        if (this.ready_status === 0) return new Error("Client still in connecting state.");
+        if (!invite) return new Error("Invalid parameters");
+        if (trim) invite = invite.split("https://discord.gg/")[1];
+        return new Promise((res, rej) => {
+            fetch(`https://discord.com/api/${this.config.api}/invites/${invite}`, {
+                "headers": {
+                    "accept": "*/*",
+                    "accept-language": this.config.language,
+                    "authorization": this.token,
+                    "sec-fetch-dest": "empty",
+                    "sec-fetch-mode": "cors",
+                    "sec-fetch-site": "same-origin",
+                },
+                "referrer": "https://discord.com/channels/@me",
+                "referrerPolicy": "no-referrer-when-downgrade",
+                "body": null,
+                "method": "POST",
+                "mode": "cors"
+            }).then((response) => {
+                response.json().then(m => {
+                    res(m);
+                });
+            });
+        });
+    };
+
+    async leave_guild(guildid) {
+        if (this.ready_status === 0) return new Error("Client still in connecting state.");
+        if (!guildid) return new Error("Invalid parameters");
+        return new Promise((res, rej) => {
+            fetch(`https://discord.com/api/${this.config.api}/users/@me/guilds/${guildid}`, {
+                "headers": {
+                    "accept": "*/*",
+                    "accept-language": this.config.language,
+                    "authorization": this.token,
+                    "sec-fetch-dest": "empty",
+                    "sec-fetch-mode": "cors",
+                    "sec-fetch-site": "same-origin"
+                },
+                "referrer": "https://discord.com/channels/@me",
+                "referrerPolicy": "no-referrer-when-downgrade",
+                "body": null,
+                "method": "DELETE",
+                "mode": "cors"
+            }).then((response) => {
+                res(response);
             });
         });
     };
 
     async send(message, channelid) {
         if (this.ready_status === 0) return new Error("Client still in connecting state.");
+        if (!message || !channelid) return new Error("Invalid parameters");
         return new Promise((res, rej) => {
             fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/messages`, {
                 "headers": {
@@ -208,13 +297,16 @@ class Client {
                 "method": "POST",
                 "mode": "cors"
             }).then((response) => {
-                res(true);
+                response.json().then(m => {
+                    res(m);
+                });
             });
         });
     };
 
     async reply(message, targetmessageid, channelid) {
         if (this.ready_status === 0) return new Error("Client still in connecting state.");
+        if (!message || !targetmessageid || !channelid) return new Error("Invalid parameters");
         return new Promise((res, rej) => {
             fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/messages`, {
                 "headers": {
@@ -247,15 +339,42 @@ class Client {
                 }),
                 "method": "POST",
                 "mode": "cors"
+            }).then((response) => {
+                response.json().then(m => {
+                    res(m);
+                });
             });
-        }).then((response) => {
-            res(true);
+        });
+    };
+
+    async delete_message(targetmessageid, channelid) {
+        if (this.ready_status === 0) return new Error("Client still in connecting state.");
+        if (!targetmessageid || !channelid) return new Error("Invalid parameters");
+        return new Promise((res, rej) => {
+            fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/messages/${targetmessageid}`, {
+                "headers": {
+                    "accept": "*/*",
+                    "accept-language": this.config.language,
+                    "authorization": this.token,
+                    "sec-fetch-dest": "empty",
+                    "sec-fetch-mode": "cors",
+                    "sec-fetch-site": "same-origin",
+                },
+                "referrer": `https://discord.com/channels/@me/${channelid}`,
+                "referrerPolicy": "no-referrer-when-downgrade",
+                "body": null,
+                "method": "DELETE",
+                "mode": "cors",
+                "credentials": "include"
+            }).then((response) => {
+                res(response);
+            });
         });
     };
 
     async type(channelid) {
         if (this.ready_status === 0) return new Error("Client still in connecting state.");
-
+        if (!channelid) return new Error("Invalid parameters");
         this.typingLoop = setInterval(() => {
             fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/typing`, {
                 "headers": {

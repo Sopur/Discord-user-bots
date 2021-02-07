@@ -1,6 +1,7 @@
 # Sopur's user bot library
     Hello! This is a user bot library the allows for a lot more things than Discord.js.
-    For example, this library allows you to access to everything a legit client does. Like user notes, friend counts, the defualt Discord tutorial, and everything else.
+    For example, this library allows you to access to everything a legit client does;
+    like user notes, friend counts, the defualt Discord tutorial, and everything else.
     This library is in a early state and needs more work.
     More functions will be added soon.
 
@@ -30,6 +31,23 @@ client.fetchmessages(100, "794326789480120374");
 //     The amount of messages you want
 
 
+//                 The guild ID
+//                       v
+client.getguild("794326789480120374");
+
+
+//               The server invite
+//                      v
+client.join_guild("invite-code", false);
+//                                 ^
+// Make this second parameter true if you want to use a http link, it's false by defualt
+
+
+//                    The guild ID
+//                          v
+client.leave_guild("794326789480120374");
+
+
 //                                The channel ID
 //                                      v
 client.send("Example message", "794326789480120374");
@@ -44,13 +62,22 @@ client.reply("Example message", "794339629553156116", "794326789480120374");
 //      The message you want to send
 
 
+//                                              The channel ID
+//                                                    v
+client.delete_message("794339629553156116", "794329000897806387");
+//                           ^
+//                    Target message ID
+
+
 //             The channel ID
 //                    v
 client.type("794326789480120374");
 cleint.stopType();
 
+
+
 ```
-**Keep in mind that all of these functions return Promises when they are finished execpt for type and stopType.**
+**Keep in mind that all of these functions return Promises when they are finished with all the information about the action you just made execpt for type, stopType, delete_message, and leave_guild.**
 
 #  Event listeners
 ```js
@@ -78,6 +105,10 @@ client.on.sessions_replace: function (sessions) { }, // Will be used when sessio
 client.on.message_read: function (message) { }, // Will be used when you/the client read a message
 
 client.on.channel_update: function (channel) { }, // Will be used when a channel is updated
+
+client.on.guild_join: function (guild) { }, // Will be used when a guild is added to your user
+
+client.on.guild_leave: function (guild) { }, // Will be used when a guild is removed from your user
 
 ```
 
