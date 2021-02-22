@@ -401,6 +401,86 @@ class Client {
         return true;
     };
 
+    async create_group(recipients) {
+        if (this.ready_status === 0) return new Error("Client still in connecting state.");
+        if (recipients === undefined) return new Error("Invalid parameters");
+        if (recipients.length < 2) return new Error("Must include at least 3 people/user IDS.");
+        return new Promise((res, rej) => {
+            fetch(`https://discord.com/api/${this.config.api}/users/@me/channels`, {
+                "headers": {
+                    "accept": "*/*",
+                    "accept-language": this.config.language,
+                    "authorization": this.token,
+                    "content-type": "application/json",
+                    "sec-fetch-dest": "empty",
+                    "sec-fetch-mode": "cors",
+                    "sec-fetch-site": "same-origin",
+                },
+                "referrer": "https://discord.com/channels/@me/",
+                "referrerPolicy": "no-referrer-when-downgrade",
+                "body": JSON.stringify({
+                    "recipients": recipients,
+                }),
+                "method": "POST",
+                "mode": "cors",
+            }).then((response) => {
+                response.json().then(m => {
+                    res(m);
+                });
+            });
+        });
+    };
+
+    async leave_group(groupid) {
+        if (this.ready_status === 0) return new Error("Client still in connecting state.");
+        if (groupid === undefined) return new Error("Invalid parameters");
+        return new Promise((res, rej) => {
+            fetch(`https://discord.com/api/${this.config.api}/channels/${groupid}`, {
+                "headers": {
+                    "accept": "*/*",
+                    "accept-language": this.config.language,
+                    "authorization": this.token,
+                    "sec-fetch-dest": "empty",
+                    "sec-fetch-mode": "cors",
+                    "sec-fetch-site": "same-origin",
+                },
+                "referrer": "https://discord.com/channels/@me",
+                "referrerPolicy": "no-referrer-when-downgrade",
+                "body": null,
+                "method": "DELETE",
+                "mode": "cors",
+            }).then((response) => {
+                response.json().then(m => {
+                    res(m);
+                });
+            });
+        });
+    };
+
+    async remove_person_from_group(personid, channelid) {
+        if (this.ready_status === 0) return new Error("Client still in connecting state.");
+        if (!channelid || !personid) return new Error("Invalid parameters");
+        return new Promise((res, rej) => {
+            fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/recipients/${personid}`, {
+                "headers": {
+                    "accept": "*/*",
+                    "accept-language": this.config.language,
+                    "authorization": this.token,
+                    "sec-fetch-dest": "empty",
+                    "sec-fetch-mode": "cors",
+                    "sec-fetch-site": "same-origin",
+                },
+                "referrer": "https://discord.com/channels/@me",
+                "referrerPolicy": "no-referrer-when-downgrade",
+                "body": null,
+                "method": "DELETE",
+                "mode": "cors"
+            }).then((response) => {
+                res(response);
+            });
+        });
+    };
+
 };
 
 module.exports = Client;
