@@ -48,7 +48,7 @@ user._trace = user._trace; // Stringified json
 // More readable version
 
 this.user_settings = {
-    timezone_offset: timezone-offset-goes-here, // (int)
+    timezone_offset: timezone_offset_goes_here, // (int)
     theme: 'dark',
     stream_notifications_enabled: true,
     status: 'invisible',
