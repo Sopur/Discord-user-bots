@@ -1,8 +1,13 @@
 # Sopur's user bot library
-    Hello! This is a user bot library the allows for a lot more things than Discord.js.
-    For example, this library allows you to access to everything a legit client does;
-    like user notes, friend counts, the defualt Discord tutorial, and everything else.
-    This library is in a early state and needs more work.
+    Hello! This is a user bot library the allows
+    for a lot more things than Discord.js.
+    For example, this library allows you to access
+    to everything a legit client does:
+    like user notes, friend counts, 
+    the defualt Discord tutorial,
+    and everything else.
+    This library is in a early state
+    and needs more work.
     More functions will be added soon.
 
 # Getting started
@@ -75,11 +80,42 @@ client.type("794326789480120374");
 cleint.stopType();
 
 
+client.create_group(["person-id", "you can have up to 10", "(Including you)"]);
+//                                       ^
+//                  The people to be in the group when it's made
+
+
+client.leave_group("785986028955500596");
+//                          ^
+//                The group ID to leave
+
+
+//                        Person ID to be removed
+//                                   v
+client.remove_person_from_group("person-id", "785986028955500596");
+//                                                     ^
+//                                    Group ID to have someone removed from
+
+
+//                         The name
+//                            v
+client.rename_group("Example group name", "785986028955500596");
+//                                                  ^
+//                                      The group ID to be renamed
+
+
+//                      Name of the server
+//                             v
+client.create_server("Example server name", "2TffvPucqHkN");
+//                                                ^
+//                          The template of the server, it's set to the defualt
+//                                   server template when not set by you
+
 
 ```
 **Keep in mind that all of these functions return Promises when they are finished with all the information about the action you just made execpt for type, stopType, delete_message, and leave_guild.**
 
-#  Event listeners
+# Event listeners
 ```js
 
 client.on.heartbeat_sent: function () { }, // Will be used when a heartbeat is sent from the client
@@ -113,7 +149,8 @@ client.on.guild_leave: function (guild) { }, // Will be used when a guild is rem
 ```
 
 # Properties
-    My library focuses on allowing you to access absolutely everthing a normal Discord client can.
+    My library focuses on allowing you to access
+    absolutely everthing a normal Discord client can.
     This means tons and tons of properties defining your client.
 
 **Here are some of them:**
@@ -331,3 +368,13 @@ this.analytics_token = 'token-goes-here';
 this._trace = ["stringified-json"];
 
 ```
+
+# What's new
+    Added 5 new functions:
+    - create_group
+    - leave_group
+    - remove_person_from_group
+    - rename_group
+    - create_server
+    Documention for these functions are shown above,
+    and in the source.
