@@ -6,11 +6,19 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["discord", "userbots", "selfbots", "bots", "discord.js", "discord user bots"],
-  "author": "Sopur",
-  "license": "GNU",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Someguy1834/Discord-user-bots.git"
+  },
   "dependencies": {
     "node-fetch": "^2.6.1",
     "ws": "^7.4.3"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/Someguy1834/Discord-user-bots/issues"
+  },
+  "homepage": "https://github.com/Someguy1834/Discord-user-bots",
+  "keywords": ["discord", "userbots", "selfbots", "bots", "discord.js", "discord user bots", "api"],
+  "author": "Sopur",
+  "license": "GNU"
 }
