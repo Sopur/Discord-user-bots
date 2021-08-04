@@ -5,16 +5,14 @@ const Packet = require("./packet.js");
 class Client {
     constructor(token) {
         this.config = {
-            api: "v8",
-            wsurl: "wss://gateway.discord.gg/?v=6&encoding=json",
+            api: "v9",
+            wsurl: "wss://gateway.discord.gg/?encoding=json&v=9",
             os: "linux",
             bd: "holy",
             language: "en-US",
             typinginterval: 1000
         };
         this.token = token;
-        const ws = new WebSocket(this.config.wsurl);
-        this.ws = ws;
         this.lastheartbeat = undefined;
         this.ready_status = 0;
         this.typingLoop = function () { };
@@ -64,13 +62,17 @@ class Client {
             interaction_update: function (message) { },*/
         };
 
+        this.checkToken().then((res) => {
+            if (res === true) this.setEvents()
+            else throw new Error(`Token "${token}" is invalid`);
+        });
+    }
+
+    setEvents() {
+        const ws = new WebSocket(this.config.wsurl);
+        this.ws = ws;
         ws.on("message", (message) => {
             message = JSON.parse(message);
-            setTimeout(() => {
-                if (this.ready_status === 0) {
-                    console.log("Discord is taking a while to respond. Maybe incorrect token?");
-                };
-            }, 5000);
             switch (message.t) {
                 case null: { // gateway
                     if (this.ready_status === 0) {
@@ -79,7 +81,7 @@ class Client {
                             ws.send(JSON.stringify(new Packet.HeartBeat(this.lastheartbeat)));
                             this.on.heartbeat_sent();
                         }, this.heartbeattimer);
-                        ws.send(JSON.stringify(new Packet.GateWayOpen(token, this.config)));
+                        ws.send(JSON.stringify(new Packet.GateWayOpen(this.token, this.config)));
                         this.on.gateway();
                     } else {
                         this.on.heartbeat_received();
@@ -166,6 +168,19 @@ class Client {
             };
         });
     };
+
+    checkToken() {
+        return new Promise((resolve) => {
+            fetch(
+                `https://discord.com/api/${this.config.api}/users/@me`,
+                new Packet.tokenCheck(this.token)
+            ).then((r) => {
+                r.json().then((res) => {
+                    resolve(res.message !== "401: Unauthorized");
+                });
+            });
+        });
+    }
 
 
     async fetchmessages(limit, channelid) {

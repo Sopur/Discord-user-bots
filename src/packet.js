@@ -4,28 +4,38 @@ class GateWayOpen {
             "op": 2,
             "d": {
                 "token": token,
-                "intents": 513,
+                "capabilities": 125,
                 "properties": {
-                    "$os": config.os,
-                    "$browser": config.bd,
-                    "$device": config.bd
+                    "os": config.os,
+                    "browser": config.bd,
+                    "device": "",
+                    "system_locale": config.language,
+                    "browser_user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.106 Safari/537.36",
+                    "browser_version": "91.0.4472.106",
+                    "os_version": "",
+                    "referrer": "",
+                    "referring_domain": "",
+                    "referrer_current": "",
+                    "referring_domain_current": "",
+                    "release_channel": "stable",
+                    "client_build_number": 92214,
+                    "client_event_source": null
+                },
+                "presence": {
+                    "status": "online",
+                    "since": 0,
+                    "activities": [],
+                    "afk": false
                 },
                 "compress": false,
-                "large_threshold": 250,
-                "guild_subscriptions": false,
-            },
-            "shard": [0, 1],
-            "presence": {
-                "activities": [{
-                    "name": "",
-                    "type": 0
-                }],
-                "status": "online",
-                "since": 91879201,
-                "afk": false
-            },
-            "intents": 7
-        };
+                "client_state": {
+                    "guild_hashes": {},
+                    "highest_last_message_id": "0",
+                    "read_state_version": 0,
+                    "user_guild_settings_version": -1
+                }
+            }
+        }
     };
 };
 
@@ -51,4 +61,26 @@ class GuildRequest {
     };
 };
 
-module.exports = { GateWayOpen, HeartBeat, GuildRequest };
+class tokenCheck {
+    constructor(token) {
+        return {
+            "headers": {
+                "accept": "*/*",
+                "accept-language": "en-US",
+                "authorization": token,
+                "sec-ch-ua": "\" Not;A Brand\";v=\"99\", \"Google Chrome\";v=\"91\", \"Chromium\";v=\"91\"",
+                "sec-ch-ua-mobile": "?0",
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "same-origin"
+            },
+            "referrer": "https://discord.com/login?redirect_to=%2Fchannels%2F%40me",
+            "referrerPolicy": "strict-origin-when-cross-origin",
+            "body": null,
+            "method": "GET",
+            "mode": "cors"
+        };
+    }
+}
+
+module.exports = { GateWayOpen, HeartBeat, GuildRequest, tokenCheck };

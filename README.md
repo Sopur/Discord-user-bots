@@ -1,9 +1,10 @@
 # Sopur's user bot library
+
     Hello! This is a user bot library the allows
     for a lot more things than Discord.js.
     For example, this library allows you to access
     to everything a legit client does:
-    like user notes, friend counts, 
+    like user notes, friend counts,
     the defualt Discord tutorial,
     and everything else.
     This library is in a early state
@@ -13,33 +14,32 @@
 # Getting started
 
 Here's a small example of this library:
+
 ```js
 const Discord = require("discord-user-bots");
 const client = new Discord.Client("Token goes here.");
 
-client.on.ready = function() {
+client.on.ready = function () {
     console.log("Client online!");
 };
 
-client.on.message_create = function(message) {
+client.on.message_create = function (message) {
     console.log(message);
 };
 ```
 
 # Functions
-```js
 
+```js
 //                            The channel ID
 //                                  v
 client.fetchmessages(100, "794326789480120374");
 //                    ^
 //     The amount of messages you want
 
-
 //                 The guild ID
 //                       v
 client.getguild("794326789480120374");
-
 
 //               The server invite
 //                      v
@@ -47,11 +47,9 @@ client.join_guild("invite-code", false);
 //                                 ^
 // Make this second parameter true if you want to use a http link, it's false by defualt
 
-
 //                    The guild ID
 //                          v
 client.leave_guild("794326789480120374");
-
 
 //                                The channel ID
 //                                      v
@@ -59,13 +57,11 @@ client.send("Example message", "794326789480120374");
 //                  ^
 //      The message you want to send
 
-
 //                               Target message ID       The channel ID
 //                                       v                      v
 client.reply("Example message", "794339629553156116", "794326789480120374");
 //                  ^
 //      The message you want to send
-
 
 //                                              The channel ID
 //                                                    v
@@ -73,22 +69,18 @@ client.delete_message("794339629553156116", "794329000897806387");
 //                           ^
 //                    Target message ID
 
-
 //             The channel ID
 //                    v
 client.type("794326789480120374");
 cleint.stopType();
 
-
 client.create_group(["person-id", "you can have up to 10", "(Including you)"]);
 //                                       ^
 //                  The people to be in the group when it's made
 
-
 client.leave_group("785986028955500596");
 //                          ^
 //                The group ID to leave
-
 
 //                        Person ID to be removed
 //                                   v
@@ -96,13 +88,11 @@ client.remove_person_from_group("person-id", "785986028955500596");
 //                                                     ^
 //                                    Group ID to have someone removed from
 
-
 //                         The name
 //                            v
 client.rename_group("Example group name", "785986028955500596");
 //                                                  ^
 //                                      The group ID to be renamed
-
 
 //                      Name of the server
 //                             v
@@ -110,12 +100,12 @@ client.create_server("Example server name", "2TffvPucqHkN");
 //                                                ^
 //                          The template of the server, it's set to the defualt
 //                                   server template when not set by you
-
-
 ```
+
 **Keep in mind that all of these functions return Promises when they are finished with all the information about the action you just made execpt for type, stopType, delete_message, and leave_guild.**
 
 # Event listeners
+
 ```js
 
 client.on.heartbeat_sent: function () { }, // Will be used when a heartbeat is sent from the client
@@ -149,16 +139,17 @@ client.on.guild_leave: function (guild) { }, // Will be used when a guild is rem
 ```
 
 # Properties
+
     My library focuses on allowing you to access
     absolutely everthing a normal Discord client can.
     This means tons and tons of properties defining your client.
 
 **Here are some of them:**
-```js
 
+```js
 this.user_settings = user.user_settings; // An object full of properties of settings
 
-this.user = user.user // An object full of properties about the user like username etc
+this.user = user.user; // An object full of properties about the user like username etc
 
 this.tutorial = user.tutorial; // A property
 
@@ -166,7 +157,7 @@ this.session_id = user.session_id; // String of random characters
 
 this.notes = user.notes; // An object that contains all the notes the user has on other people
 
-this.guild_join_requests = user.guild_join_requests // An array
+this.guild_join_requests = user.guild_join_requests; // An array
 
 this.user_guild_settings = user.user_guild_settings; // An array of Objects
 
@@ -197,24 +188,23 @@ this.connected_accounts = user.connected_accounts; // An array of Objects
 this.analytics_token = user.analytics_token; // A string
 
 this._trace = user._trace; // Stringified json
-
 ```
 
 # Now here are those properties in a more readable form:
-```js
 
+```js
 this.user_settings = {
-    timezone_offset: timezone-offset-goes-here, // (int)
-    theme: 'dark',
+    timezone_offset: timezone - offset - goes - here, // (int)
+    theme: "dark",
     stream_notifications_enabled: true,
-    status: 'invisible',
+    status: "invisible",
     show_current_game: true,
     restricted_guilds: [],
     render_reactions: true,
     render_embeds: true,
     native_phone_integration_enabled: true,
     message_display_compact: false,
-    locale: 'locale-goes-here',
+    locale: "locale-goes-here",
     inline_embed_media: true,
     inline_attachment_media: true,
     guild_positions: [Array],
@@ -233,148 +223,435 @@ this.user_settings = {
     animate_stickers: 0,
     animate_emoji: true,
     allow_accessibility_detection: false,
-    afk_timeout: 600
+    afk_timeout: 600,
 };
 this.user_guild_settings = [
-    [Object], [Object], [Object],
-    [Object], [Object], [Object],
-    [Object], [Object], [Object],
-    [Object], [Object], [Object],
-    [Object], [Object], [Object],
-    [Object], [Object], [Object],
-    [Object], [Object], [Object],
-    [Object], [Object]
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
 ];
 this.user = {
     verified: true,
-    username: 'Sopur',
+    username: "Sopur",
     premium: false,
     phone: null,
     nsfw_allowed: true,
     mobile: true,
     mfa_enabled: false,
-    id: 'id-goes-here',
+    id: "id-goes-here",
     flags: 0,
-    email: 'email-goes-here',
-    discriminator: 'discriminator-goes-here',
+    email: "email-goes-here",
+    discriminator: "discriminator-goes-here",
     desktop: true,
-    avatar: 'avatar-goes-here',
+    avatar: "avatar-goes-here",
 };
 this.tutorial = null;
-this.session_id = 'session_id-goes-here';
+this.session_id = "session_id-goes-here";
 this.relationships = [
-    [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
-    [Object]
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
 ];
 this.read_state = [
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
 ];
 this.private_channels = [
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
 ];
-this.presences = [
-    [Object], [Object],
-    [Object], [Object],
-    [Object], [Object],
-    [Object], [Object],
-    [Object]
-];
+this.presences = [[Object], [Object], [Object], [Object], [Object], [Object], [Object], [Object], [Object]];
 this.notes = {
-    'id-goes-here': 'note-goes-here',
+    "id-goes-here": "note-goes-here",
 };
 this.guilds = [
-    [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
-    [Object], [Object], [Object], [Object],
-    [Object], [Object]
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
+    [Object],
 ];
 this.guild_join_requests = [];
 this.guild_experiments = [
-    [Array], [Array], [Array],
-    [Array], [Array], [Array],
-    [Array], [Array], [Array],
-    [Array], [Array], [Array],
-    [Array], [Array], [Array],
-    [Array], [Array]
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
 ];
-this.geo_ordered_rtc_regions = ['geo', 'ordered', 'rtc', 'regions', 'go', 'here'];
+this.geo_ordered_rtc_regions = ["geo", "ordered", "rtc", "regions", "go", "here"];
 this.friend_suggestion_count = 0;
 this.experiments = [
-    [Array], [Array], [Array], [Array], [Array],
-    [Array], [Array], [Array], [Array], [Array],
-    [Array], [Array], [Array], [Array], [Array],
-    [Array], [Array], [Array], [Array], [Array],
-    [Array], [Array], [Array], [Array], [Array],
-    [Array], [Array], [Array], [Array], [Array],
-    [Array], [Array], [Array], [Array], [Array],
-    [Array], [Array], [Array], [Array], [Array],
-    [Array], [Array], [Array], [Array], [Array],
-    [Array], [Array], [Array], [Array], [Array],
-    [Array], [Array], [Array], [Array], [Array],
-    [Array], [Array], [Array], [Array], [Array],
-    [Array], [Array], [Array], [Array], [Array],
-    [Array]
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
+    [Array],
 ];
-this.country_code = 'country-goes-here';
+this.country_code = "country-goes-here";
 this.consents = { personalization: [Object] };
 this.connected_accounts = [[Object]];
-this.analytics_token = 'token-goes-here';
+this.analytics_token = "token-goes-here";
 this._trace = ["stringified-json"];
-
 ```
 
 # What's new
-    Added 5 new functions:
-    - create_group
-    - leave_group
-    - remove_person_from_group
-    - rename_group
-    - create_server
-    Documention for these functions are shown above,
-    and in the source.
+
+    The soft-ban on self bots that disallows self bots to not see contents of messages has been evaded.
+    You can now see message contents and bypass this soft-ban.
