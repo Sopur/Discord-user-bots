@@ -11,6 +11,10 @@
     and needs more work.
     More functions will be added soon.
 
+# Installing
+
+    npm i discord-user-bots
+
 # Getting started
 
 Here's a small example of this library:
@@ -52,7 +56,7 @@ client.join_guild("invite-code", false);
 //                           v
 client.get_invite_info("invite-code", false);
 //                                      ^
-// Make this second parameter true if you want to use a http link, it's false by default
+// Make this second parameter true if you want to use an https link, it's false by default
 
 //                    The guild ID
 //                          v
@@ -107,6 +111,17 @@ client.create_server("Example server name", "2TffvPucqHkN");
 //                                                ^
 //                          The template of the server, it's set to the defualt
 //                                   server template when not set by you
+
+//    The message ID to spawn the thread from       Name of the thread
+//                     v                                    v
+client.create_thread("811442648677875722", "753267478943105024", name, (auto_archive_duration = 1440));
+//                                           ^                            ^
+//                            The channel ID the message is in            ^
+//                                          The amount of time it takes for Discord to auto archive the thread
+
+//              The ID of the thread to delete
+//                            v
+client.delete_thread("888825512510779414");
 ```
 
 **Keep in mind that all of these functions return Promises when they are finished with all the information about the action you just made execpt for type, stopType, delete_message, and leave_guild.**

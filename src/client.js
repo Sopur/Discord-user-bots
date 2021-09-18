@@ -69,6 +69,10 @@ class Client {
         });
     }
 
+    /**
+     * Used for the token checking
+     * @private
+     */
     setEvents() {
         const ws = new WebSocket(this.config.wsurl);
         this.ws = ws;
@@ -189,6 +193,35 @@ class Client {
         });
     }
 
+    /**
+     * Sets the config with your wanted settings
+     * (See the pre-defined config for the defaults)
+     * @param {string} api Discord API to use
+     * @param {string} wsurl Discord URL to use for the events
+     * @param {string} os OS to use
+     * @param {string} bd DB to use
+     * @param {string} language Language to use
+     * @param {number} typinginterval The typing interval used when using the type() function
+     * @returns {void}
+     */
+    setConfig(
+        api = this.config.api,
+        wsurl = this.config.wsurl,
+        os = this.config.os,
+        bd = this.config.bd,
+        language = this.config.language,
+        typinginterval = this.config.typinginterval
+    ) {
+        this.config = {
+            api,
+            wsurl,
+            os,
+            bd,
+            language,
+            typinginterval,
+        };
+    }
+
     async fetchmessages(limit, channelid) {
         if (this.ready_status === 0) return new Error("Client still in connecting state.");
         if (!limit || !channelid) return new Error("Invalid parameters");
@@ -254,7 +287,7 @@ class Client {
      * @param {boolean} trim If this is set to true, the invite will be stripped of the "https://discord.gg/" automatically, otherwise it will just send the invite param given
      * @returns {Promise<Object>} The response from Discord
      * @deprecated
-     * @warn Make disable your account
+     * @warn May disable your account
      */
     async join_guild(invite, trim = false) {
         if (this.ready_status === 0) return new Error("Client still in connecting state.");
@@ -671,6 +704,77 @@ class Client {
                     guild_template_code: guild_template_code,
                 }),
                 method: "POST",
+                mode: "cors",
+            }).then((response) => {
+                response.json().then((m) => {
+                    res(m);
+                });
+            });
+        });
+    }
+
+    /**
+     * Creates a thread off of a message
+     * @param {string} messageid The target message ID
+     * @param {string} channelid The target channel ID
+     * @param {string} name The name of the thread
+     * @param {number} auto_archive_duration How long util the thread auto archives (Default is 1440)
+     * @returns {Promise<Object>} The response from Discord
+     */
+    async create_thread(messageid, channelid, name, auto_archive_duration = 1440) {
+        if (this.ready_status === 0) return new Error("Client still in connecting state.");
+        if (!messageid || !channelid || !name) return new Error("Invalid parameters");
+        return new Promise((res, rej) => {
+            fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/messages/${messageid}/threads`, {
+                headers: {
+                    accept: "*/*",
+                    "accept-language": this.config.language,
+                    authorization: this.token,
+                    "content-type": "application/json",
+                    "sec-fetch-dest": "empty",
+                    "sec-fetch-mode": "cors",
+                    "sec-fetch-site": "same-origin",
+                },
+                referrer: "https://discord.com/channels/@me",
+                referrerPolicy: "no-referrer-when-downgrade",
+                body: JSON.stringify({
+                    name: name,
+                    type: 11,
+                    auto_archive_duration: auto_archive_duration,
+                    location: "Message",
+                }),
+                method: "POST",
+                mode: "cors",
+            }).then((response) => {
+                response.json().then((m) => {
+                    res(m);
+                });
+            });
+        });
+    }
+
+    /**
+     * Deletes a thread
+     * @param {string} threadid The ID of the thread to delete
+     * @returns {Promise<Object>} The response from Discord
+     */
+    async delete_thread(threadid) {
+        if (this.ready_status === 0) return new Error("Client still in connecting state.");
+        if (!threadid) return new Error("Invalid parameters");
+        return new Promise((res, rej) => {
+            fetch(`https://discord.com/api/${this.config.api}/channels/${threadid}`, {
+                headers: {
+                    accept: "*/*",
+                    "accept-language": this.config.language,
+                    authorization: this.token,
+                    "sec-fetch-dest": "empty",
+                    "sec-fetch-mode": "cors",
+                    "sec-fetch-site": "same-origin",
+                },
+                referrer: "https://discord.com/channels/@me",
+                referrerPolicy: "no-referrer-when-downgrade",
+                body: null,
+                method: "DELETE",
                 mode: "cors",
             }).then((response) => {
                 response.json().then((m) => {
