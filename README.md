@@ -112,12 +112,19 @@ client.create_server("Example server name", "2TffvPucqHkN");
 //                          The template of the server, it's set to the defualt
 //                                   server template when not set by you
 
-//    The message ID to spawn the thread from       Name of the thread
-//                     v                                    v
-client.create_thread("811442648677875722", "753267478943105024", name, (auto_archive_duration = 1440));
-//                                           ^                            ^
-//                            The channel ID the message is in            ^
-//                                          The amount of time it takes for Discord to auto archive the thread
+//                       The message ID to spawn the thread from       Name of the thread
+//                                          v                                   v
+client.create_thread_from_message("811442648677875722", "753267478943105024", "name", 1440);
+//                                                                ^                     ^
+//                                                 The channel ID the message is in     ^
+//                                                      The amount of time it takes for Discord to auto archive the thread
+
+//                 The amount of time it takes for Discord to auto archive the thread
+//           The channel ID to make the thread in   v
+//                            v                     v
+client.create_thread("888825512510779414", "name", 1440);
+//                                            ^
+//                                   Name of the thread
 
 //              The ID of the thread to delete
 //                            v
@@ -129,35 +136,60 @@ client.delete_thread("888825512510779414");
 # Event listeners
 
 ```js
+client.on = {
+    discord_disconnect: function () {},
+    gateway: function () {},
+    heartbeat_sent: function () {},
+    heartbeat_received: function () {},
+    ready: function () {},
+    voice_server_update: function (message) {},
+    user_update: function (message) {},
+    application_command_create: function (message) {},
+    application_command_update: function (message) {},
+    application_command_delete: function (message) {},
+    interaction_create: function (message) {},
+    guild_create: function (message) {},
+    guild_delete: function (message) {},
+    guild_role_create: function (message) {},
+    guild_role_update: function (message) {},
+    guild_role_delete: function (message) {},
+    thread_create: function (message) {},
+    thread_update: function (message) {},
+    thread_delete: function (message) {},
+    thread_list_sync: function (message) {},
+    thread_member_update: function (message) {},
+    thread_members_update: function (message) {},
+    channel_create: function (message) {},
+    channel_update: function (message) {},
+    channel_delete: function (message) {},
+    channel_pins_update: function (message) {},
+    guild_member_add: function (message) {},
+    guild_member_update: function (message) {},
+    guild_member_remove: function (message) {},
+    guild_ban_add: function (message) {},
+    guild_ban_remove: function (message) {},
+    guild_emojis_update: function (message) {},
+    guild_stickers_update: function (message) {},
+    guild_integrations_update: function (message) {},
+    guild_webhooks_update: function (message) {},
+    invite_create: function (message) {},
+    invite_delete: function (message) {},
+    voice_state_update: function (message) {},
+    presence_update: function (message) {},
+    message_create: function (message) {},
+    message_update: function (message) {},
+    message_delete: function (message) {},
+    message_delete_bulk: function (message) {},
+    message_reaction_add: function (message) {},
+    message_reaction_remove: function (message) {},
+    message_reaction_remove_all: function (message) {},
+    message_reaction_remove_emoji: function (message) {},
+    typing_start: function (message) {},
 
-client.on.heartbeat_sent: function () { }, // Will be used when a heartbeat is sent from the client
-
-client.on.heartbeat_received: function () { }, // Will be used when a heartbeat is received from the client
-
-client.on.ready: function () { }, // Will be used when the client is ready and connected to the Discord WebSocket server
-
-client.on.message_create: function (message) { }, // Will be used when a message is created
-
-client.on.message_edit: function (message) { }, // Will be used when a message is edited
-
-client.on.message_delete: function (message) { }, // Will be used when a message is deleted
-
-client.on.message_delete_bulk: function (messages) { }, // Will be used when messages are deleted in bulk
-
-client.on.embed_sent: function (embed) { }, // Will be used when a embed is sent
-
-client.on.presence_update: function (user) { }, // Will be used when a users presence is updated
-
-client.on.sessions_replace: function (sessions) { }, // Will be used when sessions are replaced
-
-client.on.message_read: function (message) { }, // Will be used when you/the client read a message
-
-client.on.channel_update: function (channel) { }, // Will be used when a channel is updated
-
-client.on.guild_join: function (guild) { }, // Will be used when a guild is added to your user
-
-client.on.guild_leave: function (guild) { }, // Will be used when a guild is removed from your user
-
+    // Custom made ones
+    embed_sent: function (message) {},
+    message_edit: function (message) {},
+};
 ```
 
 # Properties

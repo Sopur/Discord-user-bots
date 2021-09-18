@@ -10,6 +10,7 @@ class Client {
             os: "linux",
             bd: "holy",
             language: "en-US",
+            intents: "all",
             typinginterval: 1000,
         };
         this.token = token;
@@ -22,45 +23,53 @@ class Client {
             heartbeat_sent: function () {},
             heartbeat_received: function () {},
             ready: function () {},
+            voice_server_update: function (message) {},
+            user_update: function (message) {},
+            application_command_create: function (message) {},
+            application_command_update: function (message) {},
+            application_command_delete: function (message) {},
+            interaction_create: function (message) {},
+            guild_create: function (message) {},
+            guild_delete: function (message) {},
+            guild_role_create: function (message) {},
+            guild_role_update: function (message) {},
+            guild_role_delete: function (message) {},
+            thread_create: function (message) {},
+            thread_update: function (message) {},
+            thread_delete: function (message) {},
+            thread_list_sync: function (message) {},
+            thread_member_update: function (message) {},
+            thread_members_update: function (message) {},
+            channel_create: function (message) {},
+            channel_update: function (message) {},
+            channel_delete: function (message) {},
+            channel_pins_update: function (message) {},
+            guild_member_add: function (message) {},
+            guild_member_update: function (message) {},
+            guild_member_remove: function (message) {},
+            guild_ban_add: function (message) {},
+            guild_ban_remove: function (message) {},
+            guild_emojis_update: function (message) {},
+            guild_stickers_update: function (message) {},
+            guild_integrations_update: function (message) {},
+            guild_webhooks_update: function (message) {},
+            invite_create: function (message) {},
+            invite_delete: function (message) {},
+            voice_state_update: function (message) {},
+            presence_update: function (message) {},
             message_create: function (message) {},
-            message_edit: function (message) {},
+            message_update: function (message) {},
             message_delete: function (message) {},
             message_delete_bulk: function (message) {},
-            embed_sent: function (message) {},
-            presence_update: function (message) {},
-            sessions_replace: function (message) {},
-            message_read: function (message) {},
-            channel_update: function (message) {},
-            guild_join: function (message) {},
-            guild_leave: function (message) {},
+            message_reaction_add: function (message) {},
+            message_reaction_remove: function (message) {},
+            message_reaction_remove_all: function (message) {},
+            message_reaction_remove_emoji: function (message) {},
+            typing_start: function (message) {},
 
-            /* I'll add these later...
-            channel_create: function (message) { },
-            channel_delete: function (message) { },
-            channel_pins_update: function (message) { },
-            guild_update: function (message) { },
-            guild_ban_add: function (message) { },
-            guild_ban_remove: function (message) { },
-            guild_emojis_update: function (message) { },
-            guild_integrations_update: function (message) { },
-            guild_member_add: function (message) { },
-            guild_member_remove: function (message) { },
-            guild_member_update: function (message) { },
-            guild_members_chunk: function (message) { },
-            guild_role_create: function (message) { },
-            guild_role_update: function (message) { },
-            guild_role_delete: function (message) { },
-            invite_create: function (message) { },
-            invite_delete: function (message) { },
-            message_reaction_add: function (message) { },
-            message_reaction_remove: function (message) { },
-            message_reaction_remove_all: function (message) { },
-            message_reaction_remove_emoji: function (message) { },
-            user_update: function (message) { },
-            voice_state_update: function (message) { },
-            voice_server_update: function (message) { },
-            webhooks_update: function (message) { },
-            interaction_update: function (message) { },*/
+            // Custom made ones
+            embed_sent: function (message) {},
+            message_edit: function (message) {},
         };
 
         this.checkToken().then((res) => {
@@ -70,7 +79,7 @@ class Client {
     }
 
     /**
-     * Used for the token checking
+     * Used after the token checking to set everything
      * @private
      */
     setEvents() {
@@ -123,11 +132,148 @@ class Client {
                     this.on.ready();
                     break;
                 }
+                case "VOICE_SERVER_UPDATE": {
+                    this.on.voice_server_update(message.d);
+                    break;
+                }
+                case "USER_UPDATE": {
+                    this.on.user_update(message.d);
+                    break;
+                }
+                case "APPLICATION_COMMAND_CREATE": {
+                    this.on.application_command_create(message.d);
+                    break;
+                }
+                case "APPLICATION_COMMAND_UPDATE": {
+                    this.on.application_command_update(message.d);
+                    break;
+                }
+                case "APPLICATION_COMMAND_DELETE": {
+                    this.on.application_command_delete(message.d);
+                    break;
+                }
+                case "INTERACTION_CREATE": {
+                    this.on.interaction_create(message.d);
+                    break;
+                }
+                case "GUILD_CREATE": {
+                    this.on.guild_create(message.d);
+                    break;
+                }
+                case "GUILD_DELETE": {
+                    this.on.guild_delete(message.d);
+                    break;
+                }
+                case "GUILD_ROLE_CREATE": {
+                    this.on.guild_role_create(message.d);
+                    break;
+                }
+                case "GUILD_ROLE_UPDATE": {
+                    this.on.guild_role_update(message.d);
+                    break;
+                }
+                case "GUILD_ROLE_DELETE": {
+                    this.on.guild_role_delete(message.d);
+                    break;
+                }
+                case "THREAD_CREATE": {
+                    this.on.thread_create(message.d);
+                    break;
+                }
+                case "THREAD_UPDATE": {
+                    this.on.thread_update(message.d);
+                    break;
+                }
+                case "THREAD_DELETE": {
+                    this.on.thread_delete(message.d);
+                    break;
+                }
+                case "THREAD_LIST_SYNC": {
+                    this.on.thread_list_sync(message.d);
+                    break;
+                }
+                case "THREAD_MEMBER_UPDATE": {
+                    this.on.thread_member_update(message.d);
+                    break;
+                }
+                case "THREAD_MEMBERS_UPDATE": {
+                    this.on.thread_members_update(message.d);
+                    break;
+                }
+                case "CHANNEL_CREATE": {
+                    this.on.channel_create(message.d);
+                    break;
+                }
+                case "CHANNEL_DELETE": {
+                    this.on.channel_delete(message.d);
+                    break;
+                }
+                case "CHANNEL_PINS_UPDATE": {
+                    this.on.channel_pins_update(message.d);
+                    break;
+                }
+                case "GUILD_MEMBER_ADD": {
+                    this.on.guild_member_add(message.d);
+                    break;
+                }
+                case "GUILD_MEMBER_UPDATE": {
+                    this.on.guild_member_update(message.d);
+                    break;
+                }
+                case "GUILD_MEMBER_REMOVE": {
+                    this.on.guild_member_remove(message.d);
+                    break;
+                }
+                case "GUILD_BAN_ADD": {
+                    this.on.guild_ban_add(message.d);
+                    break;
+                }
+                case "GUILD_BAN_REMOVE": {
+                    this.on.guild_ban_remove(message.d);
+                    break;
+                }
+                case "GUILD_EMOJIS_UPDATE": {
+                    this.on.guild_emojis_update(message.d);
+                    break;
+                }
+                case "GUILD_STICKERS_UPDATE": {
+                    this.on.guild_stickers_update(message.d);
+                    break;
+                }
+
+                case "GUILD_INTEGRATIONS_UPDATE": {
+                    this.on.guild_integrations_update(message.d);
+                    break;
+                }
+                case "GUILD_WEBHOOKS_UPDATE": {
+                    this.on.guild_webhooks_update(message.d);
+                    break;
+                }
+                case "INVITE_CREATE": {
+                    this.on.invite_create(message.d);
+                    break;
+                }
+                case "INVITE_DELETE": {
+                    this.on.invite_delete(message.d);
+                    break;
+                }
+                case "VOICE_STATE_UPDATE": {
+                    this.on.voice_state_update(message.d);
+                    break;
+                }
+                case "PRESENCE_UPDATE": {
+                    this.on.presence_update(message.d);
+                    break;
+                }
                 case "MESSAGE_CREATE": {
                     this.on.message_create(message.d);
                     break;
                 }
                 case "MESSAGE_UPDATE": {
+                    if (message.d.flags !== undefined && message.d.flags << 5 === 0 && Object.keys(message.d).length === 4) {
+                        this.on.thread_delete(message.d);
+                        break;
+                    }
                     switch (message.type) {
                         case undefined: {
                             // Embed
@@ -142,10 +288,6 @@ class Client {
                     }
                     break;
                 }
-                case "PRESENCE_UPDATE": {
-                    this.on.presence_update(message.d);
-                    break;
-                }
                 case "MESSAGE_DELETE": {
                     this.on.message_delete(message.d);
                     break;
@@ -154,24 +296,25 @@ class Client {
                     this.on.message_delete_bulk(message.d);
                     break;
                 }
-                case "SESSIONS_REPLACE": {
-                    this.on.sessions_replace(message.d);
+                case "MESSAGE_REACTION_ADD": {
+                    this.on.message_reaction_add(message.d);
                     break;
                 }
-                case "MESSAGE_ACK": {
-                    this.on.message_read(message.d);
+                case "MESSAGE_REACTION_REMOVE": {
+                    this.on.message_reaction_remove(message.d);
                     break;
                 }
-                case "CHANNEL_UPDATE": {
-                    this.on.channel_update(message.d);
+                case "MESSAGE_REACTION_REMOVE_ALL": {
+                    this.on.message_reaction_remove_all(message.d);
                     break;
                 }
-                case "GUILD_CREATE": {
-                    this.on.guild_join(message.d);
+                case "MESSAGE_REACTION_REMOVE_EMOJI": {
+                    this.on.message_reaction_remove_emoji(message.d);
                     break;
                 }
-                case "GUILD_DELETE": {
-                    this.on.guild_leave(message.d);
+                case "TYPING_START": {
+                    this.on.typing_start(message.d);
+                    break;
                 }
             }
         });
@@ -721,7 +864,7 @@ class Client {
      * @param {number} auto_archive_duration How long util the thread auto archives (Default is 1440)
      * @returns {Promise<Object>} The response from Discord
      */
-    async create_thread(messageid, channelid, name, auto_archive_duration = 1440) {
+    async create_thread_from_message(messageid, channelid, name, auto_archive_duration = 1440) {
         if (this.ready_status === 0) return new Error("Client still in connecting state.");
         if (!messageid || !channelid || !name) return new Error("Invalid parameters");
         return new Promise((res, rej) => {
@@ -742,6 +885,45 @@ class Client {
                     type: 11,
                     auto_archive_duration: auto_archive_duration,
                     location: "Message",
+                }),
+                method: "POST",
+                mode: "cors",
+            }).then((response) => {
+                response.json().then((m) => {
+                    res(m);
+                });
+            });
+        });
+    }
+
+    /**
+     * Creates a thread in a channel
+     * @param {string} channelid Channel to create the thread in
+     * @param {string} name The name of the thread
+     * @param {number} auto_archive_duration How long util the thread auto archives (Default is 1440)
+     * @returns {Promise<Object>} The response from Discord
+     */
+    async create_thread(channelid, name, auto_archive_duration = 1440) {
+        if (this.ready_status === 0) return new Error("Client still in connecting state.");
+        if (!channelid || !name) return new Error("Invalid parameters");
+        return new Promise((res, rej) => {
+            fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/threads`, {
+                headers: {
+                    accept: "*/*",
+                    "accept-language": this.config.language,
+                    authorization: this.token,
+                    "content-type": "application/json",
+                    "sec-fetch-dest": "empty",
+                    "sec-fetch-mode": "cors",
+                    "sec-fetch-site": "same-origin",
+                },
+                referrer: "https://discord.com/channels/@me",
+                referrerPolicy: "no-referrer-when-downgrade",
+                body: JSON.stringify({
+                    name: name,
+                    type: 11,
+                    auto_archive_duration: auto_archive_duration,
+                    location: "Thread Browser Toolbar",
                 }),
                 method: "POST",
                 mode: "cors",
