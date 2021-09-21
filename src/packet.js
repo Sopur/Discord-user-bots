@@ -20,7 +20,6 @@ class GateWayOpen {
             d: {
                 token: token,
                 capabilities: 125,
-                intents: intent,
                 properties: {
                     os: config.os,
                     browser: "Chrome",

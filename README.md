@@ -319,5 +319,6 @@ this._trace = ["stringified-json"];
 
 # What's new
 
-    Deprecated join_guild because it could disable your account
-    Add invite info function
+    - Added all event listeners
+    - added thread functions
+    - Fixed bug that stops you from viewing message content
