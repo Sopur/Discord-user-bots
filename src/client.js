@@ -689,14 +689,15 @@ class Client {
     }
 
     /**
-     * Creates a group with the people you want
+     * Creates or retrieves existing channel with given recipients
      * @param {Array} recipients The people to be in the group when it's made
      * @returns {Promise<Object>} The group info
      */
     async create_group(recipients) {
         if (this.ready_status === 0) return new Error("Client still in connecting state.");
         if (recipients === undefined) return new Error("Invalid parameters");
-        if (recipients.length < 2) return new Error("Must include at least 3 people/user IDS.");
+        if (!Array.isArray(recipients)) return new Error("Recipients should be given in array");
+        if (recipients.length < 1) return new Error("You have to enter at least one recipient");
         return new Promise((res, rej) => {
             fetch(`https://discord.com/api/${this.config.api}/users/@me/channels`, {
                 headers: {
