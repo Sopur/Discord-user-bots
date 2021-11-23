@@ -607,6 +607,44 @@ class Client {
             });
         });
     }
+    
+    /**
+     * Edit message with given text in given channel
+     * @param {string} message The message you want to put instead
+     * @param {string} messageid Id of message you want to edit
+     * @param {string} channelid Id of channel, where message is
+     * @returns {Promise<Object>} The message info
+     */
+    async edit_message(message, messageid, channelid) {
+        if (this.ready_status === 0) return new Error("Client still in connecting state.");
+        if (!message || !channelid) return new Error("Invalid parameters");
+        return new Promise((res, rej) => {
+            fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/messages/${messageid}`, {
+                headers: {
+                    accept: "*/*",
+                    "accept-language": this.config.language,
+                    authorization: this.token,
+                    "content-type": "application/json",
+                    "sec-fetch-dest": "empty",
+                    "sec-fetch-mode": "cors",
+                    "sec-fetch-site": "same-origin",
+                },
+                referrer: `https://discord.com/channels/@me/${channelid}`,
+                referrerPolicy: "no-referrer-when-downgrade",
+                body: JSON.stringify({
+                    content: message,
+                    nonce: "",
+                    tts: false,
+                }),
+                method: "PATCH",
+                mode: "cors",
+            }).then((response) => {
+                response.json().then((m) => {
+                    res(m);
+                });
+            });
+        });
+    }
 
     /**
      * Deletes a message
