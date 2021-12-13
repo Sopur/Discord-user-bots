@@ -1,4 +1,5 @@
-const Client = require("./client.js");
-const packets = require("./packet.js");
-
-module.exports = { Client, packets };
+module.exports = {
+    Client: require("./client.js"),
+    packets: require("./packet.js"),
+    constructs: require("./constructs.js"),
+};

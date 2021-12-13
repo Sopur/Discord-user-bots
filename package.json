@@ -1,18 +1,14 @@
 {
   "name": "discord-user-bots",
-  "version": "1.2.7",
+  "version": "1.3.0",
   "description": "I library that allows you to use the full potential of Discords api to create good user bots.",
   "main": "src/exports.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node tests/functions.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Someguy1834/Discord-user-bots.git"
-  },
-  "dependencies": {
-    "node-fetch": "^2.6.1",
-    "ws": "^7.4.3"
   },
   "bugs": {
     "url": "https://github.com/Someguy1834/Discord-user-bots/issues"
@@ -29,5 +25,9 @@
     "api"
   ],
   "author": "Sopur",
-  "license": "GNU"
+  "license": "GNU",
+  "dependencies": {
+    "node-fetch": "^2.6.6",
+    "ws": "^8.3.0"
+  }
 }

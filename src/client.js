@@ -1,9 +1,19 @@
 const fetch = require("node-fetch");
 const WebSocket = require("ws");
-const Packet = require("./packet.js");
+const { fetchRequestOpts, SendMessageOpts, CustomStatusOpts } = require("./constructs.js");
+const constructs = require("./constructs.js");
+const packets = require("./packet.js");
 
 class Client {
+    /**
+     * DISCORD-USER-BOTS CLIENT INSTANCE
+     * @author Sopur, Discord: Sopur#3550
+     * @license GNU
+     * @warn WHATEVER HAPPENS TO YOUR ACCOUNT AS A RESULT OF THIS LIBRARY IS WITHIN YOUR OWN LIABILITY. THIS LIBRARY IS MADE PURELY FOR TESTS AND FUN. USE AT YOUR OWN RISK.
+     * @param {string} token Auth token for the user account you want to login to
+     */
     constructor(token) {
+        if (typeof token !== "string") throw new Error("Invalid token");
         this.config = {
             api: "v9",
             wsurl: "wss://gateway.discord.gg/?encoding=json&v=9",
@@ -72,7 +82,7 @@ class Client {
             message_edit: function (message) {},
         };
 
-        this.checkToken().then((res) => {
+        this.check_token().then((res) => {
             if (res === true) this.setEvents();
             else throw new Error(`Discord rejected token "${token}" (Not valid)`);
         });
@@ -91,12 +101,13 @@ class Client {
                 case null: {
                     // gateway
                     if (this.ready_status === 0) {
+                        if (message.d === null) throw new Error("Discord refused a connection.");
                         this.heartbeattimer = message.d.heartbeat_interval;
                         this.heartbeatinterval = setInterval(() => {
-                            ws.send(JSON.stringify(new Packet.HeartBeat(this.lastheartbeat)));
+                            ws.send(JSON.stringify(new packets.HeartBeat(this.lastheartbeat)));
                             this.on.heartbeat_sent();
                         }, this.heartbeattimer);
-                        ws.send(JSON.stringify(new Packet.GateWayOpen(this.token, this.config)));
+                        ws.send(JSON.stringify(new packets.GateWayOpen(this.token, this.config)));
                         this.on.gateway();
                     } else {
                         this.on.heartbeat_received();
@@ -323,12 +334,37 @@ class Client {
     }
 
     /**
-     * Checks if the token is valid
-     * @returns {Promise<boolean}
+     * Checks the state of the client and arguments
+     * @param {Array<any>} args
+     * @private
      */
-    checkToken() {
+    call_check(args) {
+        if (this.ready_status === 0) throw new Error("Client still in connecting state.");
+        for (const arg of args) {
+            if (!arg) throw new Error(`Invalid parameter "${arg}"`);
+        }
+    }
+
+    /**
+     * Parses a discord invite link wether it be a https link or straight code
+     * @param {string} invite Invite to parse
+     * @returns {string} Raw invite code
+     */
+    parse_invite_link(invite) {
+        if (invite.startsWith("https://discord.gg/")) invite = invite.slice("https://discord.gg/".length);
+        else if (invite.startsWith("http://discord.gg/")) invite = invite.slice("http://discord.gg/".length);
+        if (invite.endsWith("/")) invite = invite.slice(0, invite.length - 1);
+        return invite;
+    }
+
+    /**
+     * Checks if the token is valid
+     * @returns {Promise<boolean>}
+     * @private
+     */
+    check_token() {
         return new Promise((resolve) => {
-            fetch(`https://discord.com/api/${this.config.api}/users/@me`, new Packet.tokenCheck(this.token)).then((r) => {
+            fetch(`https://discord.com/api/${this.config.api}/users/@me`, new packets.tokenCheck(this.token)).then((r) => {
                 r.json().then((res) => {
                     resolve(res.message !== "401: Unauthorized");
                 });
@@ -347,7 +383,7 @@ class Client {
      * @param {number} typinginterval The typing interval used when using the type() function
      * @returns {void}
      */
-    setConfig(
+    set_config(
         api = this.config.api,
         wsurl = this.config.wsurl,
         os = this.config.os,
@@ -365,79 +401,21 @@ class Client {
         };
     }
 
-    async fetchmessages(limit, channelid) {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
-        if (!limit || !channelid) return new Error("Invalid parameters");
-        return new Promise((res, rej) => {
-            fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/messages?limit=${limit}`, {
-                headers: {
-                    accept: "*/*",
-                    "accept-language": this.config.language,
-                    authorization: this.token,
-                    "sec-fetch-dest": "empty",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-site": "same-origin",
-                },
-                referrer: `https://discord.com/channels/@me/${channelid}`,
-                referrerPolicy: "no-referrer-when-downgrade",
-                body: null,
-                method: "GET",
-                mode: "cors",
-                credentials: "include",
-            }).then((response) => {
-                response.json().then((m) => {
-                    res(m);
-                });
-            });
-        });
-    }
-
     /**
-     * Fetches all the info about the guild given
-     * @param {string} guildid The guild ID to fetch
-     * @returns {Promise<Object>} The guild info
-     */
-    async getguild(guildid) {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
-        if (!guildid) return new Error("Invalid parameters");
-        return new Promise((res, rej) => {
-            fetch(`https://discord.com/api/${this.config.api}/guilds/${guildid}`, {
-                headers: {
-                    accept: "*/*",
-                    "accept-language": this.config.language,
-                    authorization: this.token,
-                    "sec-fetch-dest": "empty",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-site": "same-origin",
-                },
-                referrer: `https://discord.com/channels/@me`,
-                referrerPolicy: "no-referrer-when-downgrade",
-                body: null,
-                method: "GET",
-                mode: "cors",
-                credentials: "include",
-            }).then((response) => {
-                response.json().then((m) => {
-                    res(m);
-                });
-            });
-        });
-    }
-
-    /**
-     * Gets info about the invite code givin
-     * @param {string} invite The Discord invite
-     * @param {boolean} trim If this is set to true, the invite will be stripped of the "https://discord.gg/" automatically, otherwise it will just send the invite param given
+     * Does a client fetch request to Discord
+     * @param {string} link The url to fetch to
+     * @param {fetchRequestOpts} options Options
      * @returns {Promise<Object>} The response from Discord
-     * @deprecated
-     * @warn May disable your account
+     * @private
      */
-    async join_guild(invite, trim = false) {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
-        if (!invite) return new Error("Invalid parameters");
-        if (trim) invite = invite.split("https://discord.gg/")[1];
+    async fetch_request(link, options = fetchRequestOpts) {
+        options = {
+            ...fetchRequestOpts,
+            ...options,
+        };
+        if (typeof link !== "string") throw new Error("Couldn't fetch");
         return new Promise((res, rej) => {
-            fetch(`https://discord.com/api/${this.config.api}/invites/${invite}`, {
+            fetch(`https://discord.com/api/${this.config.api}/${link}`, {
                 headers: {
                     accept: "*/*",
                     "accept-language": this.config.language,
@@ -446,523 +424,386 @@ class Client {
                     "sec-fetch-dest": "empty",
                     "sec-fetch-mode": "cors",
                     "sec-fetch-site": "same-origin",
+                    "x-discord-locale": this.config.language,
                 },
-                referrer: "https://discord.com/channels/@me",
+                referrer: `https://discord.com/channels/@me`,
                 referrerPolicy: "no-referrer-when-downgrade",
-                body: "{}",
-                method: "POST",
+                body: options.body,
+                method: options.method,
                 mode: "cors",
+                credentials: "include",
             }).then((response) => {
-                response.json().then((m) => {
-                    res(m);
-                });
+                if (options.parse) {
+                    response.json().then((m) => {
+                        res(m);
+                    });
+                } else {
+                    res(response);
+                }
             });
         });
     }
 
     /**
-     * Joins a server or group chat
+     * Fetches messages from Discord
+     * @param {number} limit Amount of messages to get (Limit is 100)
+     * @param {string} channel_id Channel ID to fetch from
+     * @param {string} before_message_id An offset when getting messages (Optional)
+     * @returns {Promise<Array<Object>>}
+     */
+    async fetch_messages(limit, channel_id, before_message_id = false) {
+        this.call_check(arguments);
+        if (limit > 100) throw new Error("Cannot fetch more than 100 messages at a time.");
+        return await this.fetch_request(
+            `channels/${channel_id}/messages?${before_message_id === false ? "" : `before=${before_message_id}&`}limit=${limit}`,
+            {
+                method: "GET",
+                body: null,
+                parse: true,
+            }
+        );
+    }
+
+    /**
+     * Fetches all the info about the guild given
+     * @param {string} guild_id The guild ID to fetch
+     * @returns {Promise<Object>} The guild info
+     */
+    async get_guild(guild_id) {
+        this.call_check(arguments);
+        return await this.fetch_request(`guilds/${guild_id}`, {
+            method: "GET",
+            body: null,
+            parse: true,
+        });
+    }
+
+    /**
+     * Joins the guild the invite code is pointing to
      * @param {string} invite The Discord invite
-     * @param {boolean} trim If this is set to true, the invite will be stripped of the "https://discord.gg/" automatically, otherwise it will just send the invite param given
+     * @returns {Promise<Object>} The response from Discord
+     * @deprecated
+     * @warn May disable your account
+     */
+    async join_guild(invite) {
+        this.call_check(arguments);
+        invite = this.parse_invite_link(invite);
+        return await this.fetch_request(`invites/${this.parse_invite_link(invite)}`, {
+            body: "{}",
+            method: "POST",
+            parse: true,
+        });
+    }
+
+    /**
+     * Gets info about an invite link
+     * @param {string} invite The Discord invite
      * @returns {Promise<Object>} The response from Discord
      */
-    async get_invite_info(invite, trim = false) {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
-        if (!invite) return new Error("Invalid parameters");
-        if (trim) invite = invite.split("https://discord.gg/")[1];
-        return new Promise((res, rej) => {
-            fetch(
-                `https://discord.com/api/${this.config.api}/invites/${invite}?inputValue=https%3A%2F%2Fdiscord.gg%2F${invite}&with_counts=true&with_expiration=true`,
-                {
-                    headers: {
-                        accept: "*/*",
-                        "accept-language": this.config.language,
-                        authorization: this.token,
-                        "sec-fetch-dest": "empty",
-                        "sec-fetch-mode": "cors",
-                        "sec-fetch-site": "same-origin",
-                    },
-                    referrer: "https://discord.com/channels/@me",
-                    referrerPolicy: "no-referrer-when-downgrade",
-                    body: null,
-                    method: "GET",
-                    mode: "cors",
-                }
-            ).then((response) => {
-                response.json().then((m) => {
-                    res(m);
-                });
-            });
+    async get_invite_info(invite) {
+        this.call_check(arguments);
+        const code = this.parse_invite_link(invite);
+        return await this.fetch_request(`invites/${code}?inputValue=https%3A%2F%2Fdiscord.gg%2F${code}&with_counts=true&with_expiration=true`, {
+            method: "GET",
+            body: null,
+            parse: true,
         });
     }
 
     /**
      * Leaves a server
-     * @param {string} guildid The guild ID to leave from
+     * @param {string} guild_id The guild ID to leave from
      * @returns {Promise<Object>} The response from Discord
      */
-    async leave_guild(guildid) {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
-        if (!guildid) return new Error("Invalid parameters");
-        return new Promise((res, rej) => {
-            fetch(`https://discord.com/api/${this.config.api}/users/@me/guilds/${guildid}`, {
-                headers: {
-                    accept: "*/*",
-                    "accept-language": this.config.language,
-                    authorization: this.token,
-                    "sec-fetch-dest": "empty",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-site": "same-origin",
-                },
-                referrer: "https://discord.com/channels/@me",
-                referrerPolicy: "no-referrer-when-downgrade",
-                body: null,
-                method: "DELETE",
-                mode: "cors",
-            }).then((response) => {
-                res(response);
-            });
+    async leave_guild(guild_id) {
+        this.call_check(arguments);
+        return await this.fetch_request(`users/@me/guilds/${guild_id}/delete`, {
+            method: "DELETE",
+            body: null,
+            parse: false,
         });
     }
 
     /**
-     * Sends a message with the channel given
-     * @param {string} message The message you want to send
-     * @param {string} channelid The channel you want to send it in
-     * @returns {Promise<Object>} The message info
+     * Deletes a server if you're owner
+     * @param {string} guild_id The guild to delete
+     * @returns {Promise<Object>} The response from Discord
      */
-    async send(message, channelid) {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
-        if (!message || !channelid) return new Error("Invalid parameters");
-        return new Promise((res, rej) => {
-            fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/messages`, {
-                headers: {
-                    accept: "*/*",
-                    "accept-language": this.config.language,
-                    authorization: this.token,
-                    "content-type": "application/json",
-                    "sec-fetch-dest": "empty",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-site": "same-origin",
-                },
-                referrer: `https://discord.com/channels/@me/${channelid}`,
-                referrerPolicy: "no-referrer-when-downgrade",
-                body: JSON.stringify({
-                    content: message,
-                    nonce: "",
-                    tts: false,
-                }),
-                method: "POST",
-                mode: "cors",
-            }).then((response) => {
-                response.json().then((m) => {
-                    res(m);
-                });
-            });
+    async delete_guild(guild_id) {
+        return await this.fetch_request(`guilds/${guild_id}/delete`, {
+            method: "POST",
+            body: "{}",
+            parse: false,
         });
     }
 
     /**
-     * Replies to a message
-     * @param {string} message The message content
-     * @param {string} targetmessageid The message to reply
-     * @param {string} channelid The channel ID of the message
-     * @returns {Promise<Object>} The message info
+     * Sends a message
+     * @param {string} channel_id Channel to send in
+     * @param {SendMessageOpts} data Options
+     * @returns {Promise<object>}
      */
-    async reply(message, targetmessageid, channelid) {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
-        if (!message || !targetmessageid || !channelid) return new Error("Invalid parameters");
-        return new Promise((res, rej) => {
-            fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/messages`, {
-                headers: {
-                    accept: "*/*",
-                    "accept-language": this.config.language,
-                    authorization: this.token,
-                    "content-type": "application/json",
-                    "sec-fetch-dest": "empty",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-site": "same-origin",
-                },
-                referrer: `https://discord.com/channels/@me/${channelid}`,
-                referrerPolicy: "no-referrer-when-downgrade",
-                body: JSON.stringify({
-                    content: message,
-                    nonce: "",
-                    tts: false,
-                    message_reference: {
-                        channel_id: channelid,
-                        message_id: targetmessageid,
-                    },
-                    allowed_mentions: {
-                        parse: ["users", "roles", "everyone"],
-                        replied_user: false,
-                    },
-                }),
-                method: "POST",
-                mode: "cors",
-            }).then((response) => {
-                response.json().then((m) => {
-                    res(m);
-                });
-            });
+    async send(channel_id, data = SendMessageOpts) {
+        this.call_check(arguments);
+        data = new constructs.SendMessage(data);
+        return await this.fetch_request(`channels/${channel_id}/messages`, {
+            body: data.content,
+            method: "POST",
+            parse: true,
+        });
+    }
+
+    /**
+     * Edits a message
+     * @param {string} message_id Message to edit
+     * @param {string} channel_id Channel the message is in
+     * @param {string} content The content to change to
+     * @returns {Promise<object>}
+     */
+    async edit(message_id, channel_id, content) {
+        this.call_check(arguments);
+        return await this.fetch_request(`channels/${channel_id}/messages/${message_id}`, {
+            body: JSON.stringify({
+                content: content,
+            }),
+            method: "PATCH",
+            parse: false,
         });
     }
 
     /**
      * Deletes a message
-     * @param {string} targetmessageid The message to delete
-     * @param {string} channelid The channel the message is in
+     * @param {string} target_message_id The message to delete
+     * @param {string} channel_id The channel the message is in
      * @returns {Promise<Object>} The response from Discord
      */
-    async delete_message(targetmessageid, channelid) {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
-        if (!targetmessageid || !channelid) return new Error("Invalid parameters");
-        return new Promise((res, rej) => {
-            fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/messages/${targetmessageid}`, {
-                headers: {
-                    accept: "*/*",
-                    "accept-language": this.config.language,
-                    authorization: this.token,
-                    "sec-fetch-dest": "empty",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-site": "same-origin",
-                },
-                referrer: `https://discord.com/channels/@me/${channelid}`,
-                referrerPolicy: "no-referrer-when-downgrade",
-                body: null,
-                method: "DELETE",
-                mode: "cors",
-                credentials: "include",
-            }).then((response) => {
-                res(response);
-            });
+    async delete_message(target_message_id, channel_id) {
+        this.call_check(arguments);
+        return await this.fetch_request(`channels/${channel_id}/messages/${target_message_id}`, {
+            body: null,
+            method: "DELETE",
+            parse: false,
         });
     }
 
     /**
      * Types in the channel given
-     * @param {string} channelid The channel ID to type in
+     * @param {string} channel_id The channel ID to type in
      */
-    async type(channelid) {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
-        if (!channelid) return new Error("Invalid parameters");
+    async type(channel_id) {
+        this.call_check(arguments);
 
-        fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/typing`, {
-            headers: {
-                accept: "*/*",
-                "accept-language": this.config.language,
-                authorization: this.token,
-                "sec-fetch-dest": "empty",
-                "sec-fetch-mode": "cors",
-                "sec-fetch-site": "same-origin",
-            },
-            referrer: `https://discord.com/channels/@me/${channelid}`,
-            referrerPolicy: "no-referrer-when-downgrade",
-            body: null,
-            method: "POST",
-            mode: "cors",
-        });
-
-        this.typingLoop = setInterval(() => {
-            fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/typing`, {
-                headers: {
-                    accept: "*/*",
-                    "accept-language": this.config.language,
-                    authorization: this.token,
-                    "sec-fetch-dest": "empty",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-site": "same-origin",
-                },
-                referrer: `https://discord.com/channels/@me/${channelid}`,
-                referrerPolicy: "no-referrer-when-downgrade",
+        this.typingLoop = setInterval(async () => {
+            await this.fetch_request(`channels/${channel_id}/typing`, {
                 body: null,
                 method: "POST",
-                mode: "cors",
+                parse: false,
             });
         }, this.config.typinginterval);
+
+        return await this.fetch_request(`channels/${channel_id}/typing`, {
+            body: null,
+            method: "POST",
+            parse: false,
+        });
     }
 
-    async stopType() {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
+    /**
+     * Stops typing
+     * @returns {boolean} Success or not
+     */
+    async stop_type() {
+        this.call_check(arguments);
         clearInterval(this.typingLoop);
         return true;
     }
 
     /**
-     * Creates a group with the people you want
-     * @param {Array} recipients The people to be in the group when it's made
+     * Creates or retrieves existing channel with given recipients
+     * @param {Array<string>} recipients The IDs fo the people to be in the group when it's made
      * @returns {Promise<Object>} The group info
      */
-    async create_group(recipients) {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
-        if (recipients === undefined) return new Error("Invalid parameters");
-        if (recipients.length < 2) return new Error("Must include at least 3 people/user IDS.");
-        return new Promise((res, rej) => {
-            fetch(`https://discord.com/api/${this.config.api}/users/@me/channels`, {
-                headers: {
-                    accept: "*/*",
-                    "accept-language": this.config.language,
-                    authorization: this.token,
-                    "content-type": "application/json",
-                    "sec-fetch-dest": "empty",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-site": "same-origin",
-                },
-                referrer: "https://discord.com/channels/@me/",
-                referrerPolicy: "no-referrer-when-downgrade",
-                body: JSON.stringify({
-                    recipients: recipients,
-                }),
-                method: "POST",
-                mode: "cors",
-            }).then((response) => {
-                response.json().then((m) => {
-                    res(m);
-                });
-            });
+    async group(recipients) {
+        this.call_check(arguments);
+        return await this.fetch_request(`users/@me/channels`, {
+            body: JSON.stringify({
+                recipients: recipients,
+            }),
+            method: "POST",
+            parse: true,
         });
     }
 
     /**
      * Leaves a group
-     * @param {string} groupid The group ID to leave
+     * @param {string} group_id The group ID to leave
      * @returns {Promise<Object>} The response from Discord
      */
-    async leave_group(groupid) {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
-        if (groupid === undefined) return new Error("Invalid parameters");
-        return new Promise((res, rej) => {
-            fetch(`https://discord.com/api/${this.config.api}/channels/${groupid}`, {
-                headers: {
-                    accept: "*/*",
-                    "accept-language": this.config.language,
-                    authorization: this.token,
-                    "sec-fetch-dest": "empty",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-site": "same-origin",
-                },
-                referrer: "https://discord.com/channels/@me",
-                referrerPolicy: "no-referrer-when-downgrade",
-                body: null,
-                method: "DELETE",
-                mode: "cors",
-            }).then((response) => {
-                response.json().then((m) => {
-                    res(m);
-                });
-            });
+    async leave_group(group_id) {
+        this.call_check(arguments);
+        return await this.fetch_request(`channels/${group_id}`, {
+            body: null,
+            method: "DELETE",
+            parse: false,
         });
     }
 
     /**
      * Removes someone from a group
-     * @param {string} personid Person ID to be removed
-     * @param {string} channelid Group ID to have someone removed from
+     * @param {string} person_id Person ID to be removed
+     * @param {string} channel_id Group ID to have someone removed from
      * @returns {Promise<Object>} The response from Discord
      */
-    async remove_person_from_group(personid, channelid) {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
-        if (!channelid || !personid) return new Error("Invalid parameters");
-        return new Promise((res, rej) => {
-            fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/recipients/${personid}`, {
-                headers: {
-                    accept: "*/*",
-                    "accept-language": this.config.language,
-                    authorization: this.token,
-                    "sec-fetch-dest": "empty",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-site": "same-origin",
-                },
-                referrer: "https://discord.com/channels/@me",
-                referrerPolicy: "no-referrer-when-downgrade",
-                body: null,
-                method: "DELETE",
-                mode: "cors",
-            }).then((response) => {
-                res(response);
-            });
+    async remove_person_from_group(person_id, channel_id) {
+        this.call_check(arguments);
+        return await this.fetch_request(`channels/${channel_id}/recipients/${person_id}`, {
+            body: null,
+            method: "DELETE",
+            parse: false,
         });
     }
 
     /**
      * Renames a group
      * @param {string} name The name
-     * @param {string} channelid The group ID to be renamed
+     * @param {string} group_id The group ID to be renamed
      * @returns {Promise<Object>} The response from Discord
      */
-    async rename_group(name, groupid) {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
-        if (!groupid || !name) return new Error("Invalid parameters");
-        return new Promise((res, rej) => {
-            fetch(`https://discord.com/api/${this.config.api}/channels/${groupid}`, {
-                headers: {
-                    accept: "*/*",
-                    "accept-language": this.config.language,
-                    authorization: this.token,
-                    "content-type": "application/json",
-                    "sec-fetch-dest": "empty",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-site": "same-origin",
-                },
-                referrer: "https://discord.com/channels/@me",
-                referrerPolicy: "no-referrer-when-downgrade",
-                body: JSON.stringify({
-                    name: name,
-                }),
-                method: "PATCH",
-                mode: "cors",
-            }).then((response) => {
-                res(response);
-            });
+    async rename_group(name, group_id) {
+        this.call_check(arguments);
+        return await this.fetch_request(`channels/${group_id}`, {
+            body: JSON.stringify({
+                name: name,
+            }),
+            method: "PATCH",
+            parse: false,
         });
     }
 
     /**
      * Creates a server
      * @param {string} name Name of the server
-     * @param {string} guild_template_code The template of the server, it's set to the defualt server template when not set by you
-     * @returns {Promise<Object>} The server info
+     * @param {string} guild_template_code The template of the server (Optional) (Default "2TffvPucqHkN")
      */
     async create_server(name, guild_template_code = "2TffvPucqHkN") {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
-        if (!name) return new Error("Invalid parameters");
-        return new Promise((res, rej) => {
-            fetch(`https://discord.com/api/${this.config.api}/guilds`, {
-                headers: {
-                    accept: "*/*",
-                    "accept-language": this.config.language,
-                    authorization: this.token,
-                    "content-type": "application/json",
-                    "sec-fetch-dest": "empty",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-site": "same-origin",
-                },
-                referrer: "https://discord.com/channels/@me",
-                referrerPolicy: "no-referrer-when-downgrade",
-                body: JSON.stringify({
-                    name: name,
-                    icon: null,
-                    channels: [],
-                    system_channel_id: null,
-                    guild_template_code: guild_template_code,
-                }),
-                method: "POST",
-                mode: "cors",
-            }).then((response) => {
-                response.json().then((m) => {
-                    res(m);
-                });
-            });
+        this.call_check(arguments);
+        return await this.fetch_request(`guilds`, {
+            body: JSON.stringify({
+                name: name,
+                icon: null,
+                channels: [],
+                system_channel_id: null,
+                guild_template_code: guild_template_code,
+            }),
+            method: "POST",
+            parse: true,
         });
     }
 
     /**
      * Creates a thread off of a message
-     * @param {string} messageid The target message ID
-     * @param {string} channelid The target channel ID
+     * @param {string} message_id The target message ID
+     * @param {string} channel_id The target channel ID
      * @param {string} name The name of the thread
-     * @param {number} auto_archive_duration How long util the thread auto archives (Default is 1440)
+     * @param {number} auto_archive_duration How long util the thread auto archives (Optional) (Default 1440)
      * @returns {Promise<Object>} The response from Discord
      */
-    async create_thread_from_message(messageid, channelid, name, auto_archive_duration = 1440) {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
-        if (!messageid || !channelid || !name) return new Error("Invalid parameters");
-        return new Promise((res, rej) => {
-            fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/messages/${messageid}/threads`, {
-                headers: {
-                    accept: "*/*",
-                    "accept-language": this.config.language,
-                    authorization: this.token,
-                    "content-type": "application/json",
-                    "sec-fetch-dest": "empty",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-site": "same-origin",
-                },
-                referrer: "https://discord.com/channels/@me",
-                referrerPolicy: "no-referrer-when-downgrade",
-                body: JSON.stringify({
-                    name: name,
-                    type: 11,
-                    auto_archive_duration: auto_archive_duration,
-                    location: "Message",
-                }),
-                method: "POST",
-                mode: "cors",
-            }).then((response) => {
-                response.json().then((m) => {
-                    res(m);
-                });
-            });
+    async create_thread_from_message(message_id, channel_id, name, auto_archive_duration = 1440) {
+        this.call_check(arguments);
+        return await this.fetch_request(`channels/${channel_id}/messages/${message_id}/threads`, {
+            body: JSON.stringify({
+                name: name,
+                type: 11,
+                auto_archive_duration: auto_archive_duration,
+                location: "Message",
+            }),
+            method: "POST",
+            parse: true,
         });
     }
 
     /**
      * Creates a thread in a channel
-     * @param {string} channelid Channel to create the thread in
+     * @param {string} channel_id Channel to create the thread in
      * @param {string} name The name of the thread
-     * @param {number} auto_archive_duration How long util the thread auto archives (Default is 1440)
+     * @param {number} auto_archive_duration How long util the thread auto archives (Optional) (Default 1440)
      * @returns {Promise<Object>} The response from Discord
      */
-    async create_thread(channelid, name, auto_archive_duration = 1440) {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
-        if (!channelid || !name) return new Error("Invalid parameters");
-        return new Promise((res, rej) => {
-            fetch(`https://discord.com/api/${this.config.api}/channels/${channelid}/threads`, {
-                headers: {
-                    accept: "*/*",
-                    "accept-language": this.config.language,
-                    authorization: this.token,
-                    "content-type": "application/json",
-                    "sec-fetch-dest": "empty",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-site": "same-origin",
-                },
-                referrer: "https://discord.com/channels/@me",
-                referrerPolicy: "no-referrer-when-downgrade",
-                body: JSON.stringify({
-                    name: name,
-                    type: 11,
-                    auto_archive_duration: auto_archive_duration,
-                    location: "Thread Browser Toolbar",
-                }),
-                method: "POST",
-                mode: "cors",
-            }).then((response) => {
-                response.json().then((m) => {
-                    res(m);
-                });
-            });
+    async create_thread(channel_id, name, auto_archive_duration = 1440) {
+        this.call_check(arguments);
+        return await this.fetch_request(`channels/${channel_id}/threads`, {
+            body: JSON.stringify({
+                name: name,
+                type: 11,
+                auto_archive_duration: auto_archive_duration,
+                location: "Thread Browser Toolbar",
+            }),
+            method: "POST",
+            parse: true,
         });
     }
 
     /**
      * Deletes a thread
-     * @param {string} threadid The ID of the thread to delete
+     * @param {string} thread_id The ID of the thread to delete
      * @returns {Promise<Object>} The response from Discord
      */
-    async delete_thread(threadid) {
-        if (this.ready_status === 0) return new Error("Client still in connecting state.");
-        if (!threadid) return new Error("Invalid parameters");
-        return new Promise((res, rej) => {
-            fetch(`https://discord.com/api/${this.config.api}/channels/${threadid}`, {
-                headers: {
-                    accept: "*/*",
-                    "accept-language": this.config.language,
-                    authorization: this.token,
-                    "sec-fetch-dest": "empty",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-site": "same-origin",
-                },
-                referrer: "https://discord.com/channels/@me",
-                referrerPolicy: "no-referrer-when-downgrade",
-                body: null,
-                method: "DELETE",
-                mode: "cors",
-            }).then((response) => {
-                response.json().then((m) => {
-                    res(m);
-                });
-            });
+    async delete_thread(thread_id) {
+        this.call_check(arguments);
+        return await this.fetch_request(`channels/${thread_id}`, {
+            body: null,
+            method: "DELETE",
+            parse: false,
+        });
+    }
+
+    /**
+     * Adds a reaction to a message
+     * @param {string} message_id The message to add a reaction to
+     * @param {string} channel_id The channel the message is in
+     * @param {string} emoji Emoji to react with (Cannot be ":robot:" has to be an actual emoji like "🤖")
+     * @returns {Promise<Object>} The response from Discord
+     */
+    async add_reaction(message_id, channel_id, emoji) {
+        this.call_check(arguments);
+        return await this.fetch_request(`channels/${channel_id}/messages/${message_id}/reactions/${encodeURI(emoji)}/%40me`, {
+            body: null,
+            method: "PUT",
+            parse: false,
+        });
+    }
+
+    /**
+     * Changes your visibility
+     * @param {"online" | "idle" | "dnd" | "invisible"} status Status to change to (Must be "online", "idle", "dnd", or "invisible")
+     * @returns {Promise<Object>} The response from Discord
+     */
+    async change_status(status) {
+        this.call_check(arguments);
+        if (["online", "idle", "dnd", "invisible"].includes(status) === false) {
+            throw new Error(`Status must be "online", "idle", "dnd", or "invisible"`);
+        }
+        return await this.fetch_request(`users/@me/settings`, {
+            body: JSON.stringify({
+                status: status,
+            }),
+            method: "PATCH",
+            parse: false,
+        });
+    }
+
+    /**
+     * Sets a custom status
+     * @param {CustomStatusOpts} custom_status The custom status options
+     * @returns {Promise<Object>} The response from Discord
+     */
+    async set_custom_status(custom_status = CustomStatusOpts) {
+        return await this.fetch_request(`users/@me/settings`, {
+            body: JSON.stringify({
+                custom_status: new constructs.CustomStatus(custom_status).contents,
+            }),
+            method: "PATCH",
+            parse: false,
         });
     }
 }
