@@ -530,9 +530,9 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async delete_guild(guild_id) {
-        return await this.fetch_request(`guilds/${guild_id}/delete`, {
-            method: "POST",
-            body: "{}",
+        return await this.fetch_request(`guilds/${guild_id}`, {
+            method: "DELETE",
+            body: null,
             parse: false,
         });
     }
