@@ -684,16 +684,17 @@ class Client {
      * Creates a server
      * @param {string} name Name of the server
      * @param {string} guild_template_code The template of the server (Optional) (Default "2TffvPucqHkN")
+     * @param {string} icon The icon in base64 (Optional)
      */
-    async create_server(name, guild_template_code = "2TffvPucqHkN") {
+    async create_server(name, guild_template_code = "2TffvPucqHkN", icon = null) {
         this.call_check(arguments);
-        return await this.fetch_request(`guilds`, {
+        return await this.fetch_request(`guilds/templates/${guild_template_code}`, {
             body: JSON.stringify({
                 name: name,
-                icon: null,
-                channels: [],
-                system_channel_id: null,
-                guild_template_code: guild_template_code,
+                icon: icon,
+                // channels: [],
+                // system_channel_id: null,
+                // guild_template_code: guild_template_code,
             }),
             method: "POST",
             parse: true,
