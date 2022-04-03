@@ -523,6 +523,19 @@ class Client {
             parse: false,
         });
     }
+    
+    /**
+     * Create perm invite
+     * @param {string} channel_id The channel
+     * @returns {Promise<Object>} The response from Discord (invite code is under .code)
+     */
+    async create_perm_invite(channel_id) {
+        return await this.fetch_request(`/channels/${channel_id}/invites`, {
+            method: "POST",
+            body: JSON.stringify({max_age: 0}),
+            parse: true,
+        });
+    }
 
     /**
      * Deletes a server if you're owner
