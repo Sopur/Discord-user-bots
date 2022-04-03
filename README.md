@@ -1,13 +1,13 @@
 # Sopur's user bot library
 
-    Hello! This is a user bot library the allows
+    Hello! This is a user bot library that allows
     for a lot more things than Discord.js.
     For example, this library allows you to access
     to everything a legit client does:
     like user notes, friend counts,
-    the defualt Discord tutorial,
+    the default Discord tutorial,
     and everything else.
-    This library is in a early state
+    This library is in an early state
     and needs more work.
     More functions will be added soon.
 
