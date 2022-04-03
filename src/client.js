@@ -20,7 +20,7 @@ class Client {
             os: "linux",
             bd: "holy",
             language: "en-US",
-            intents: "all",
+            intents: 0xFFFF,
             typinginterval: 1000,
         };
         this.token = token;
