@@ -90,6 +90,9 @@ void (async function main() {
             expireAt: null,
         });
 
+        await test("create_invite");
+        console.log((await client.create_invite(channel)).code);
+
         await test("parse_invite_link");
         console.log(client.parse_invite_link("https://discord.gg/WADasB31") === "WADasB31");
         console.log(client.parse_invite_link("http://discord.gg/WADasB31") === "WADasB31");

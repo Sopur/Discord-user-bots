@@ -1,6 +1,7 @@
-const fetch = require("node-fetch");
 const WebSocket = require("ws");
-const { fetchRequestOpts, SendMessageOpts, CustomStatusOpts } = require("./constructs.js");
+const fetch = require("./fetch.js");
+const { fetchRequestOpts, SendMessageOpts, CustomStatusOpts, createInviteOpts } = require("./constructs.js");
+const DiscordEvents = require("./events.js");
 const constructs = require("./constructs.js");
 const packets = require("./packet.js");
 
@@ -8,7 +9,7 @@ class Client {
     /**
      * DISCORD-USER-BOTS CLIENT INSTANCE
      * @author Sopur, Discord: Sopur#3550
-     * @license GNU
+     * @license MIT
      * @warn WHATEVER HAPPENS TO YOUR ACCOUNT AS A RESULT OF THIS LIBRARY IS WITHIN YOUR OWN LIABILITY. THIS LIBRARY IS MADE PURELY FOR TESTS AND FUN. USE AT YOUR OWN RISK.
      * @param {string} token Auth token for the user account you want to login to
      */
@@ -20,67 +21,14 @@ class Client {
             os: "linux",
             bd: "holy",
             language: "en-US",
-            intents: "all",
             typinginterval: 1000,
         };
         this.token = token;
         this.lastheartbeat = undefined;
         this.ready_status = 0;
         this.typingLoop = function () {};
-        this.on = {
-            discord_disconnect: function () {},
-            gateway: function () {},
-            heartbeat_sent: function () {},
-            heartbeat_received: function () {},
-            ready: function () {},
-            voice_server_update: function (message) {},
-            user_update: function (message) {},
-            application_command_create: function (message) {},
-            application_command_update: function (message) {},
-            application_command_delete: function (message) {},
-            interaction_create: function (message) {},
-            guild_create: function (message) {},
-            guild_delete: function (message) {},
-            guild_role_create: function (message) {},
-            guild_role_update: function (message) {},
-            guild_role_delete: function (message) {},
-            thread_create: function (message) {},
-            thread_update: function (message) {},
-            thread_delete: function (message) {},
-            thread_list_sync: function (message) {},
-            thread_member_update: function (message) {},
-            thread_members_update: function (message) {},
-            channel_create: function (message) {},
-            channel_update: function (message) {},
-            channel_delete: function (message) {},
-            channel_pins_update: function (message) {},
-            guild_member_add: function (message) {},
-            guild_member_update: function (message) {},
-            guild_member_remove: function (message) {},
-            guild_ban_add: function (message) {},
-            guild_ban_remove: function (message) {},
-            guild_emojis_update: function (message) {},
-            guild_stickers_update: function (message) {},
-            guild_integrations_update: function (message) {},
-            guild_webhooks_update: function (message) {},
-            invite_create: function (message) {},
-            invite_delete: function (message) {},
-            voice_state_update: function (message) {},
-            presence_update: function (message) {},
-            message_create: function (message) {},
-            message_update: function (message) {},
-            message_delete: function (message) {},
-            message_delete_bulk: function (message) {},
-            message_reaction_add: function (message) {},
-            message_reaction_remove: function (message) {},
-            message_reaction_remove_all: function (message) {},
-            message_reaction_remove_emoji: function (message) {},
-            typing_start: function (message) {},
-
-            // Custom made ones
-            embed_sent: function (message) {},
-            message_edit: function (message) {},
-        };
+        this.on = new DiscordEvents();
+        this.requester = fetch;
 
         this.check_token().then((res) => {
             if (res === true) this.setEvents();
@@ -804,6 +752,24 @@ class Client {
             }),
             method: "PATCH",
             parse: false,
+        });
+    }
+
+    /**
+     * Creates an invite
+     * @param {string} channel_id The channel
+     * @param {createInviteOpts} inviteOpts Invite options
+     * @returns {Promise<Object>} The response from Discord (invite code is under .code)
+     */
+    async create_invite(channel_id, inviteOpts = createInviteOpts) {
+        const opts = {
+            createInviteOpts,
+            ...inviteOpts,
+        };
+        return await this.fetch_request(`/channels/${channel_id}/invites`, {
+            method: "POST",
+            body: JSON.stringify(opts),
+            parse: true,
         });
     }
 }

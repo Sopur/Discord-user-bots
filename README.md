@@ -5,7 +5,7 @@
     For example, this library allows you to access
     to everything a legit client does:
     like user notes, friend counts,
-    the defualt Discord tutorial,
+    the default Discord tutorial,
     and everything else.
     This library is in a early state
     and needs more work.
@@ -31,6 +31,18 @@ client.on.message_create = function (message) {
     console.log(message);
 };
 ```
+
+# Practical examples
+
+## Mailing list
+
+Pings other users when a victim on your choice sends a message <br>
+**https://github.com/Sopur/Discord-user-bots/blob/main/examples/mailinglist.js**
+
+## Un-sendable channel
+
+Deletes every message that is sent on channels of your choice while avoiding message delete rate limits <br>
+**https://github.com/Sopur/Discord-user-bots/blob/main/examples/unsendable-channel.js**
 
 # Functions
 
@@ -177,6 +189,19 @@ client.set_custom_status({
     emoji: "🤖", // Status emoji (Optional) (Default null)
     expireAt: "2021-12-13T05:57:58.828Z", // The time until resets (Optional) (Default null, meaning never resetting)
 });
+
+client.create_invite(
+    "753267478943105028", // Channel you want to make the invite on
+    createInviteOpts: {
+        // Invite options (Default seen here)
+        validate: null, // Validate an already active invite
+        max_age: 0, // Max age in seconds (0 means never ending)
+        max_uses: 0, // Make uses (0 means no limit)
+        target_user_id: null, // Target user ID
+        target_type: null, // Target type
+        temporary: false, // Kick the person invited once they log off if they don't have a role
+    },
+);
 
 // Parses a discord invite link wether it be a https link or straight code
 client.parse_invite_link(
@@ -381,19 +406,9 @@ this._trace = ["stringified-json"];
 
 # What's new
 
-    - Made the library throw errors instead of returning them
-    - Added whole new object to the exports, constructs
-    - Massive code refactoring
-    - Fixed documentation mistakes
-    - Added parse_invite_link to the client to get the invite code from a url
-    - Changed all function names to snake case
-    - Added add_reaction, change_status, and set_custom_status
-    - Added a lot more functionality to the send function
-    - Added a lot more functionality to the edit function
-    - Changed create_group to group and changed its description
-    - Fixed bug where if discord rejected your connection attempt it throws an error
-    - Changed, fixed, and added more documentation
-    - Updated packages node-fetch and node-ws
+    - Practical examples in the /examples folder
+    - Switched over to the native fetch API with node-fetch as a fallback
+    - Added create_invite function
 
 # WARN
 
