@@ -27,6 +27,7 @@
   "author": "Sopur",
   "license": "GNU",
   "dependencies": {
+    "form-data": "^4.0.0",
     "node-fetch": "^2.6.7",
     "ws": "^8.3.0"
   }

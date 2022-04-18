@@ -1,3 +1,7 @@
+const FS = require("node:fs");
+const Path = require("node:path");
+const FormData = require("form-data");
+
 const MentionsLimiterOpts = {
     allowUsers: true,
     allowRoles: true,
@@ -72,6 +76,41 @@ class SendMessage {
             ...SendMessageOpts,
             ...opts,
         };
+
+        const formData = new FormData();
+
+        const attachments = [];
+        if (Array.isArray(options.attachments) && options.attachments.length > 0) {
+            this.isMultipartFormData = true;
+
+            options.attachments.forEach((item, index) => {
+                if (!item) return;
+
+                switch (typeof item) {
+                    case "string": {
+                        item = {
+                            path: item,
+                        };
+                    }
+
+                    case "object": {
+                        if (!item.path) return;
+
+                        const filename = item.name || Path.basename(item.path) || `file-${index}`;
+                        formData.append(`files[${index}]`, FS.createReadStream(item.path), filename);
+                        attachments.push({
+                            id: index,
+                            filename,
+                            description: item.description || filename,
+                        });
+                        break;
+                    }
+                }
+            });
+
+            options.attachments = attachments;
+        }
+
         this.content = JSON.stringify({
             content: options.content,
             tts: options.tts,
@@ -85,7 +124,13 @@ class SendMessage {
                     : null,
             components: null,
             sticker_ids: options.stickers,
+            ...(attachments.length > 0 ? {attachments} : {}),
         });
+
+        if (this.isMultipartFormData) {
+            formData.append("payload_json", this.content);
+            this.content = formData;
+        }
     }
 }
 
