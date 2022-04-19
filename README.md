@@ -98,6 +98,16 @@ client.send(
         },
         components: [], // Message components (Not optional, must be an array, can be unset for default) (Default empty array)
         stickers: [], // Stickers to go with your message (Not optional, must be an array, can be unset for default) (Default empty array)
+        attachments: [ // Message attachments (optional, must be an array)
+            "path/to/file", // Attachment item can be string (file location)
+
+            // Or can be an object for attachment detail
+            {
+                path: "path/to/file", // File location (Not optional, must be string)
+                name: "custom-file-name.jpg", // File name (optional, must be string) (Default is base name of file)
+                description: "File description" // Attachment description (optional, must be string) (Default is empty)
+            }
+        ],
     }
 );
 
