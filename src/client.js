@@ -738,6 +738,22 @@ class Client {
     }
 
     /**
+     * Remove a reaction to a message
+     * @param {string} message_id The message to remove a reaction to
+     * @param {string} channel_id The channel the message is in
+     * @param {string} emoji Emoji to react with (Cannot be ":robot:" has to be an actual emoji like "🤖")
+     * @returns {Promise<Object>} The response from Discord
+     */
+     async remove_reaction(message_id, channel_id, emoji) {
+        this.call_check(arguments);
+        return await this.fetch_request(`channels/${channel_id}/messages/${message_id}/reactions/${encodeURI(emoji)}/%40me`, {
+            body: null,
+            method: "DELETE",
+            parse: false,
+        });
+    }
+
+    /**
      * Changes your visibility
      * @param {"online" | "idle" | "dnd" | "invisible"} status Status to change to (Must be "online", "idle", "dnd", or "invisible")
      * @returns {Promise<Object>} The response from Discord

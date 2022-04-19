@@ -188,6 +188,13 @@ client.add_reaction(
     "🤖" // Emoji to react with (Cannot be ":robot:" has to be an actual emoji like "🤖")
 );
 
+// Remove a reaction to a message
+client.remove_reaction(
+    "914533528245506068", // The message to remove a reaction to
+    "753267478943105028", // The channel the message is in
+    "🤖" // Emoji to react with (Cannot be ":robot:" has to be an actual emoji like "🤖")
+);
+
 // Changes your visibility
 client.change_status(
     "online" // Status to change to (Must be "online", "idle", "dnd", or "invisible")
