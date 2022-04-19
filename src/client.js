@@ -373,6 +373,7 @@ class Client {
                     "sec-fetch-mode": "cors",
                     "sec-fetch-site": "same-origin",
                     "x-discord-locale": this.config.language,
+                    ...(options.isMultipartFormData ? options.body.getHeaders() : {}),
                 },
                 referrer: `https://discord.com/channels/@me`,
                 referrerPolicy: "no-referrer-when-downgrade",
@@ -508,6 +509,7 @@ class Client {
         this.call_check(arguments);
         data = new constructs.SendMessage(data);
         return await this.fetch_request(`channels/${channel_id}/messages`, {
+            isMultipartFormData: data.isMultipartFormData,
             body: data.content,
             method: "POST",
             parse: true,
