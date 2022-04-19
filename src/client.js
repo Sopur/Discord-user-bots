@@ -389,8 +389,6 @@ class Client {
                 } else {
                     res(response);
                 }
-            }).catch((err) => {
-                console.log("[ERR]", err.stack);
             });
         });
     }
