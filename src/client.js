@@ -1,5 +1,5 @@
 const WebSocket = require("ws");
-const fetch = require("./fetch.js");
+const fetch = require("node-fetch");
 const { fetchRequestOpts, SendMessageOpts, CustomStatusOpts, createInviteOpts } = require("./constructs.js");
 const DiscordEvents = require("./events.js");
 const constructs = require("./constructs.js");
@@ -474,19 +474,6 @@ class Client {
     }
 
     /**
-     * Create perm invite
-     * @param {string} channel_id The channel
-     * @returns {Promise<Object>} The response from Discord (invite code is under .code)
-     */
-    async create_perm_invite(channel_id) {
-        return await this.fetch_request(`/channels/${channel_id}/invites`, {
-            method: "POST",
-            body: JSON.stringify({ max_age: 0 }),
-            parse: true,
-        });
-    }
-
-    /**
      * Deletes a server if you're owner
      * @param {string} guild_id The guild to delete
      * @returns {Promise<Object>} The response from Discord
@@ -744,7 +731,7 @@ class Client {
      * @param {string} emoji Emoji to react with (Cannot be ":robot:" has to be an actual emoji like "🤖")
      * @returns {Promise<Object>} The response from Discord
      */
-     async remove_reaction(message_id, channel_id, emoji) {
+    async remove_reaction(message_id, channel_id, emoji) {
         this.call_check(arguments);
         return await this.fetch_request(`channels/${channel_id}/messages/${message_id}/reactions/${encodeURI(emoji)}/%40me`, {
             body: null,

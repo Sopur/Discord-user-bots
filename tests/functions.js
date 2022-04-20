@@ -18,7 +18,7 @@ void (async function main() {
     };
 
     client.on.guild_create = async function (guild_object) {
-        const channel = guild_object.channels[2].id; // General
+        const channel = guild_object.channels[1].id; // General
         const guild = guild_object.id;
         console.log(channel, guild);
 

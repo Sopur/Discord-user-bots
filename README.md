@@ -1,3 +1,5 @@
+![Logo](https://raw.githubusercontent.com/Sopur/Discord-user-bots/main/logo.png)
+
 # Sopur's user bot library
 
     Hello! This is a user bot library that allows
@@ -98,15 +100,16 @@ client.send(
         },
         components: [], // Message components (Not optional, must be an array, can be unset for default) (Default empty array)
         stickers: [], // Stickers to go with your message (Not optional, must be an array, can be unset for default) (Default empty array)
-        attachments: [ // Message attachments (optional, must be an array)
-            "path/to/file", // Attachment item can be string (file location)
+        attachments: [
+            // Message attachments (optional, must be an array)
+            "path/to/file", // Attachment item can be string (absolute path to the file)
 
             // Or can be an object for attachment detail
             {
                 path: "path/to/file", // File location (Not optional, must be string)
                 name: "custom-file-name.jpg", // File name (optional, must be string) (Default is base name of file)
-                description: "File description" // Attachment description (optional, must be string) (Default is empty)
-            }
+                description: "File description", // Attachment description (optional, must be string) (Default is empty)
+            },
         ],
     }
 );
@@ -209,7 +212,7 @@ client.set_custom_status({
 
 client.create_invite(
     "753267478943105028", // Channel you want to make the invite on
-    createInviteOpts: {
+    {
         // Invite options (Default seen here)
         validate: null, // Validate an already active invite
         max_age: 0, // Max age in seconds (0 means never ending)
@@ -217,7 +220,7 @@ client.create_invite(
         target_user_id: null, // Target user ID
         target_type: null, // Target type
         temporary: false, // Kick the person invited once they log off if they don't have a role
-    },
+    }
 );
 
 // Parses a discord invite link wether it be a https link or straight code
@@ -423,9 +426,19 @@ this._trace = ["stringified-json"];
 
 # What's new
 
+    - Added special thanks section
+    - Added logo
     - Practical examples in the /examples folder
-    - Switched over to the native fetch API with node-fetch as a fallback
     - Added create_invite function
+    - Updated send function to include attachments
+    - Added remove_reaction function
+
+# Special Thanks To
+
+## Github user Luthfi GearIntellix
+
+-   Added attachments to the send function
+-   Added the remove_reaction function
 
 # WARN
 

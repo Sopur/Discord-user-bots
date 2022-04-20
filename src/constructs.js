@@ -65,6 +65,7 @@ const SendMessageOpts = {
     allowed_mentions: MentionsLimiterOpts,
     components: null,
     stickers: [],
+    attachments: [],
 };
 class SendMessage {
     /**
@@ -124,7 +125,7 @@ class SendMessage {
                     : null,
             components: null,
             sticker_ids: options.stickers,
-            ...(attachments.length > 0 ? {attachments} : {}),
+            ...(attachments.length > 0 ? { attachments } : {}),
         });
 
         if (this.isMultipartFormData) {

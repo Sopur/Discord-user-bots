@@ -52,6 +52,17 @@ client.send(
         },
         components: [], // Message components (Not optional, must be an array, can be unset for default) (Default empty array)
         stickers: [], // Stickers to go with your message (Not optional, must be an array, can be unset for default) (Default empty array)
+        attachments: [
+            // Message attachments (optional, must be an array)
+            "path/to/file", // Attachment item can be string (absolute path to the file)
+
+            // Or can be an object for attachment detail
+            {
+                path: "path/to/file", // File location (Not optional, must be string)
+                name: "custom-file-name.jpg", // File name (optional, must be string) (Default is base name of file)
+                description: "File description", // Attachment description (optional, must be string) (Default is empty)
+            },
+        ],
     }
 );
 
@@ -132,6 +143,13 @@ client.add_reaction(
     "🤖" // Emoji to react with (Cannot be ":robot:" has to be an actual emoji like "🤖")
 );
 
+// Remove a reaction to a message
+client.remove_reaction(
+    "914533528245506068", // The message to remove a reaction to
+    "753267478943105028", // The channel the message is in
+    "🤖" // Emoji to react with (Cannot be ":robot:" has to be an actual emoji like "🤖")
+);
+
 // Changes your visibility
 client.change_status(
     "online" // Status to change to (Must be "online", "idle", "dnd", or "invisible")
@@ -143,6 +161,19 @@ client.set_custom_status({
     emoji: "🤖", // Status emoji (Optional) (Default null)
     expireAt: "2021-12-13T05:57:58.828Z", // The time until resets (Optional) (Default null, meaning never resetting)
 });
+
+client.create_invite(
+    "753267478943105028", // Channel you want to make the invite on
+    {
+        // Invite options (Default seen here)
+        validate: null, // Validate an already active invite
+        max_age: 0, // Max age in seconds (0 means never ending)
+        max_uses: 0, // Make uses (0 means no limit)
+        target_user_id: null, // Target user ID
+        target_type: null, // Target type
+        temporary: false, // Kick the person invited once they log off if they don't have a role
+    }
+);
 
 // Parses a discord invite link wether it be a https link or straight code
 client.parse_invite_link(
