@@ -304,6 +304,21 @@ class Client {
         if (invite.endsWith("/")) invite = invite.slice(0, invite.length - 1);
         return invite;
     }
+    
+     /**
+     * Closes an active connection
+     */
+    close() {
+        this.ws.close();
+    }
+    
+     /**
+     * Closes an active connection
+     */
+    terminate(){
+        this.ws.terminate();
+    }
+    
 
     /**
      * Checks if the token is valid
