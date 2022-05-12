@@ -313,7 +313,7 @@ class Client {
     }
     
      /**
-     * Closes an active connection
+     * Terminates an active connection
      */
     terminate(){
         this.ws.terminate();
