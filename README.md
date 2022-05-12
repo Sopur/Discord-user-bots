@@ -440,6 +440,10 @@ this._trace = ["stringified-json"];
 -   Added attachments to the send function
 -   Added the remove_reaction function
 
+## Github user Imraj
+-   Added close function
+-   Added terminate function
+
 # WARN
 
 WHATEVER HAPPENS TO YOUR ACCOUNT AS A RESULT OF THIS LIBRARY IS WITHIN YOUR OWN LIABILITY. THIS LIBRARY IS MADE PURELY FOR TESTS AND FUN. USE AT YOUR OWN RISK.
