@@ -1,5 +1,17 @@
 const Discord = require("discord-user-bots");
-const client = new Discord.Client("Token goes here.");
+// Client constructor
+const client = new Discord.Client(
+    "token", // Bot token
+    {
+        // Bot config (Defaults shown)
+        api: "v9", // API version
+        wsurl: "wss://gateway.discord.gg/?encoding=json&v=9", // Discord WebSocket URL
+        os: "linux", // Operating system
+        bd: "holy", // BD
+        language: "en-US", // Language
+        typinginterval: 1000, // How often to send the typing request
+    }
+);
 
 // Fetches messages from Discord
 client.fetch_messages(
@@ -181,12 +193,12 @@ client.parse_invite_link(
 );
 
 // Sets the config with your wanted settings
-// (See the pre-defined config for the defaults)
-client.set_config(
-    "v9", // Discord API version
-    "wss://gateway.discord.gg/?encoding=json&v=9", // WebSocket URL
-    "linux", // Operating system
-    "holy", // bd
-    "en-US", // Language
-    1000 // Typing Interval
-);
+// (Everything shown is the default config)
+client.set_config({
+    api: "v9", // API version
+    wsurl: "wss://gateway.discord.gg/?encoding=json&v=9", // Discord WebSocket URL
+    os: "linux", // Operating system
+    bd: "holy", // BD
+    language: "en-US", // Language
+    typinginterval: 1000, // How often to send the typing request
+});

@@ -54,6 +54,20 @@ See the README file in the source folder for instructions for contributing and w
 # Functions
 
 ```js
+// Client constructor
+const client = new Discord.Client(
+    "token", // Bot token
+    {
+        // Bot config (Defaults shown)
+        api: "v9", // API version
+        wsurl: "wss://gateway.discord.gg/?encoding=json&v=9", // Discord WebSocket URL
+        os: "linux", // Operating system
+        bd: "holy", // BD
+        language: "en-US", // Language
+        typinginterval: 1000, // How often to send the typing request
+    }
+);
+
 // Fetches messages from Discord
 client.fetch_messages(
     100, // Amount of messages to get (Limit is 100)
@@ -234,15 +248,15 @@ client.parse_invite_link(
 );
 
 // Sets the config with your wanted settings
-// (See the pre-defined config for the defaults)
-client.set_config(
-    "v9", // Discord API version
-    "wss://gateway.discord.gg/?encoding=json&v=9", // WebSocket URL
-    "linux", // Operating system
-    "holy", // bd
-    "en-US", // Language
-    1000 // Typing Interval
-);
+// (Everything shown is the default config)
+client.set_config({
+    api: "v9", // API version
+    wsurl: "wss://gateway.discord.gg/?encoding=json&v=9", // Discord WebSocket URL
+    os: "linux", // Operating system
+    bd: "holy", // BD
+    language: "en-US", // Language
+    typinginterval: 1000, // How often to send the typing request
+});
 ```
 
 # Event listeners
@@ -431,12 +445,21 @@ this._trace = ["stringified-json"];
 
 # What's new
 
-    - Added special thanks section
-    - Added logo
-    - Practical examples in the /examples folder
-    - Added create_invite function
-    - Updated send function to include attachments
-    - Added remove_reaction function
+    -   Changed license in README
+    -   Fixed typos
+    -   Added contributing instructions to src/README.md
+    -   Added GitHub user Imraj to the special thanks section
+    -   Reformatted files
+    -   Added overviews and contributing instructions to all files
+    -   Updated the event listener example
+    -   Fixed the set_custom_status and create_invite functions
+    -   Made the set_config function use options as an object instead of taking everything separate as parameters
+    -   Allowed the config to be passed into the Client constructor as the second argument
+    -   Added close function
+    -   Added terminate function
+    -   Updated documentation
+    -   Added custom errors
+    -   Made the Discord-User-Bots version available in the exports object
 
 # Special Thanks To
 

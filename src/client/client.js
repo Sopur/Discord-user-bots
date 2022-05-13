@@ -32,6 +32,7 @@ class Client {
      * @license MIT
      * @warn WHATEVER HAPPENS TO YOUR ACCOUNT AS A RESULT OF THIS LIBRARY IS WITHIN YOUR OWN LIABILITY. THIS LIBRARY IS MADE PURELY FOR TESTS AND FUN. USE AT YOUR OWN RISK.
      * @param {string} token Auth token for the user account you want to login to
+     * @param {BotConfigOpts} config The configuration for the Client
      */
     constructor(token, config = BotConfigOpts) {
         if (typeof token !== "string") throw new DiscordUserBotsError("Invalid token");
