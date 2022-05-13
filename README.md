@@ -460,6 +460,7 @@ this._trace = ["stringified-json"];
     -   Updated documentation
     -   Added custom errors
     -   Made the Discord-User-Bots version available in the exports object
+    -   Added native fetch support (Only works for Node version 18.x and above)
 
 # Special Thanks To
 
