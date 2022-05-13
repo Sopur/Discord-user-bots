@@ -46,6 +46,11 @@ Pings other users when a victim on your choice sends a message <br>
 Deletes every message that is sent on channels of your choice while avoiding message delete rate limits <br>
 **https://github.com/Sopur/Discord-user-bots/blob/main/examples/unsendable-channel.js**
 
+# Contributing
+
+See the README file in the source folder for instructions for contributing and what each file does.
+**https://github.com/Sopur/Discord-user-bots/blob/main/src/README.md**
+
 # Functions
 
 ```js
@@ -441,6 +446,7 @@ this._trace = ["stringified-json"];
 -   Added the remove_reaction function
 
 ## Github user Imraj
+
 -   Added close function
 -   Added terminate function
 

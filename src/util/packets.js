@@ -1,3 +1,16 @@
+/**
+ *
+ *  ## OVERVIEW
+ *
+ *  Contains all the hardcoded packets.
+ *
+ *  ## WHEN CONTRIBUTING:
+ *
+ *  Each class is capitalized.
+ *  The class properties can be stringified as JSON.
+ *
+ */
+
 class GateWayOpen {
     constructor(token, config) {
         this.op = 2;
@@ -45,7 +58,7 @@ class GuildRequest {
     }
 }
 
-class tokenCheck {
+class TokenCheck {
     constructor(token) {
         this.headers = {
             accept: "*/*",
@@ -65,4 +78,4 @@ class tokenCheck {
     }
 }
 
-module.exports = { GateWayOpen, HeartBeat, GuildRequest, tokenCheck };
+module.exports = { GateWayOpen, HeartBeat, GuildRequest, TokenCheck };

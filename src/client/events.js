@@ -1,3 +1,15 @@
+/**
+ *
+ *  ## OVERVIEW
+ *
+ *  Specifies all the events the client can listen on.
+ *
+ *  ## WHEN CONTRIBUTING:
+ *
+ *  If the event contains data meant for the user, include it as a "message" parameter.
+ *
+ */
+
 class DiscordEvents {
     discord_disconnect() {}
     gateway() {}

@@ -1,9 +1,29 @@
+/**
+ *
+ *  ## OVERVIEW
+ *
+ *  This files handles the main client definition.
+ *  It includes the event handlers, and action functions.
+ *
+ *  ## WHEN CONTRIBUTING:
+ *
+ *  Make sure to call call_check at the start of each function. It covers state checking and argument checking.
+ *  Use the DiscordUserBotsError class when throwing an error to the user.
+ *  Use the DiscordAPIError class when throwing an error based on Discord's response.
+ *  Use the DiscordUserBotsInternalError class when throwing an error because of false behavior of the Client class.
+ *  Make sure to include a description and the parameters as comments above the function.
+ *  Use the fetch_request private function when sending a fetch request to Discord.
+ *
+ */
+
 const WebSocket = require("ws");
-const fetch = require("node-fetch");
-const { fetchRequestOpts, SendMessageOpts, CustomStatusOpts, createInviteOpts } = require("./constructs.js");
+const NodeFetch = require("node-fetch");
+const { FetchRequestOpts, SendMessageOpts, CustomStatusOpts, CreateInviteOpts, BotConfigOpts } = require("./constructs.js");
+const { DiscordUserBotsError, DiscordAPIError, DiscordUserBotsInternalError } = require("../util/error.js");
+const { ReadyStates } = require("../util/enums.js");
 const DiscordEvents = require("./events.js");
 const constructs = require("./constructs.js");
-const packets = require("./packet.js");
+const packets = require("../util/packets.js");
 
 class Client {
     /**
@@ -13,26 +33,24 @@ class Client {
      * @warn WHATEVER HAPPENS TO YOUR ACCOUNT AS A RESULT OF THIS LIBRARY IS WITHIN YOUR OWN LIABILITY. THIS LIBRARY IS MADE PURELY FOR TESTS AND FUN. USE AT YOUR OWN RISK.
      * @param {string} token Auth token for the user account you want to login to
      */
-    constructor(token) {
-        if (typeof token !== "string") throw new Error("Invalid token");
+    constructor(token, config = BotConfigOpts) {
+        if (typeof token !== "string") throw new DiscordUserBotsError("Invalid token");
         this.config = {
-            api: "v9",
-            wsurl: "wss://gateway.discord.gg/?encoding=json&v=9",
-            os: "linux",
-            bd: "holy",
-            language: "en-US",
-            typinginterval: 1000,
+            ...BotConfigOpts,
+            ...config,
         };
         this.token = token;
-        this.lastheartbeat = undefined;
-        this.ready_status = 0;
+        this.lastHeartBeat = undefined;
+        this.ready_status = ReadyStates.OFFLINE;
         this.typingLoop = function () {};
         this.on = new DiscordEvents();
-        this.requester = fetch;
+
+        // If node is version 18.x or above use the native fetch, otherwise the node-fetch.
+        this.requester = typeof fetch !== "undefined" ? fetch : NodeFetch;
 
         this.check_token().then((res) => {
             if (res === true) this.setEvents();
-            else throw new Error(`Discord rejected token "${token}" (Not valid)`);
+            else throw new DiscordAPIError(`Discord rejected token "${token}" (Not valid)`);
         });
     }
 
@@ -41,21 +59,21 @@ class Client {
      * @private
      */
     setEvents() {
-        const ws = new WebSocket(this.config.wsurl);
-        this.ws = ws;
-        ws.on("message", (message) => {
+        this.ready_state = ReadyStates.CONNECTING;
+        this.ws = new WebSocket(this.config.wsurl);
+        this.ws.on("message", (message) => {
             message = JSON.parse(message);
             switch (message.t) {
                 case null: {
                     // gateway
-                    if (this.ready_status === 0) {
-                        if (message.d === null) throw new Error("Discord refused a connection.");
+                    if (this.ready_status !== ReadyStates.CONNECTED) {
+                        if (message.d === null) throw new DiscordAPIError("Discord refused a connection.");
                         this.heartbeattimer = message.d.heartbeat_interval;
                         this.heartbeatinterval = setInterval(() => {
-                            ws.send(JSON.stringify(new packets.HeartBeat(this.lastheartbeat)));
+                            this.ws.send(JSON.stringify(new packets.HeartBeat(this.lastHeartBeat)));
                             this.on.heartbeat_sent();
                         }, this.heartbeattimer);
-                        ws.send(JSON.stringify(new packets.GateWayOpen(this.token, this.config)));
+                        this.ws.send(JSON.stringify(new packets.GateWayOpen(this.token, this.config)));
                         this.on.gateway();
                     } else {
                         this.on.heartbeat_received();
@@ -87,7 +105,7 @@ class Client {
                     this.analytics_token = user.analytics_token; // A string
                     this._trace = user._trace; // Stringified json
 
-                    this.ready_status = 1;
+                    this.ready_status = ReadyStates.CONNECTED;
                     this.on.ready();
                     break;
                 }
@@ -278,7 +296,7 @@ class Client {
             }
         });
 
-        ws.on("close", this.on.discord_disconnect);
+        this.ws.on("close", () => this.on.discord_disconnect());
     }
 
     /**
@@ -287,9 +305,9 @@ class Client {
      * @private
      */
     call_check(args) {
-        if (this.ready_status === 0) throw new Error("Client still in connecting state.");
+        if (this.ready_status !== ReadyStates.CONNECTED) throw new DiscordUserBotsError(`Client is in a ${ReadyStates[this.ready_status]} state`);
         for (const arg of args) {
-            if (!arg) throw new Error(`Invalid parameter "${arg}"`);
+            if (!arg) throw new DiscordUserBotsError(`Invalid parameter "${arg}"`);
         }
     }
 
@@ -304,24 +322,23 @@ class Client {
         if (invite.endsWith("/")) invite = invite.slice(0, invite.length - 1);
         return invite;
     }
-    
-     /**
+
+    /**
      * Closes an active connection gracefully
      */
     close() {
         this.call_check(arguments);
         this.ws.close();
     }
-    
-     /**
+
+    /**
      * Terminates an active connection by
      * shutting down the connection immediately.
      */
-    terminate(){
+    terminate() {
         this.call_check(arguments);
         this.ws.terminate();
     }
-    
 
     /**
      * Checks if the token is valid
@@ -330,7 +347,7 @@ class Client {
      */
     check_token() {
         return new Promise((resolve) => {
-            fetch(`https://discord.com/api/${this.config.api}/users/@me`, new packets.tokenCheck(this.token)).then((r) => {
+            this.requester(`https://discord.com/api/${this.config.api}/users/@me`, new packets.TokenCheck(this.token)).then((r) => {
                 r.json().then((res) => {
                     resolve(res.message !== "401: Unauthorized");
                 });
@@ -347,41 +364,29 @@ class Client {
      * @param {string} bd DB to use
      * @param {string} language Language to use
      * @param {number} typinginterval The typing interval used when using the type() function
-     * @returns {void}
      */
-    set_config(
-        api = this.config.api,
-        wsurl = this.config.wsurl,
-        os = this.config.os,
-        bd = this.config.bd,
-        language = this.config.language,
-        typinginterval = this.config.typinginterval
-    ) {
+    set_config(config = this.config) {
         this.config = {
-            api,
-            wsurl,
-            os,
-            bd,
-            language,
-            typinginterval,
+            ...this.config,
+            ...config,
         };
     }
 
     /**
      * Does a client fetch request to Discord
      * @param {string} link The url to fetch to
-     * @param {fetchRequestOpts} options Options
+     * @param {FetchRequestOpts} options Options
      * @returns {Promise<Object>} The response from Discord
      * @private
      */
-    async fetch_request(link, options = fetchRequestOpts) {
+    async fetch_request(link, options = FetchRequestOpts) {
         options = {
-            ...fetchRequestOpts,
+            ...FetchRequestOpts,
             ...options,
         };
-        if (typeof link !== "string") throw new Error("Couldn't fetch");
+        if (typeof link !== "string") throw new DiscordUserBotsInternalError("Couldn't fetch");
         return new Promise((res, rej) => {
-            fetch(`https://discord.com/api/${this.config.api}/${link}`, {
+            this.requester(`https://discord.com/api/${this.config.api}/${link}`, {
                 headers: {
                     accept: "*/*",
                     "accept-language": this.config.language,
@@ -420,7 +425,7 @@ class Client {
      */
     async fetch_messages(limit, channel_id, before_message_id = false) {
         this.call_check(arguments);
-        if (limit > 100) throw new Error("Cannot fetch more than 100 messages at a time.");
+        if (limit > 100) throw new DiscordUserBotsError("Cannot fetch more than 100 messages at a time.");
         return await this.fetch_request(
             `channels/${channel_id}/messages?${before_message_id === false ? "" : `before=${before_message_id}&`}limit=${limit}`,
             {
@@ -766,7 +771,7 @@ class Client {
     async change_status(status) {
         this.call_check(arguments);
         if (["online", "idle", "dnd", "invisible"].includes(status) === false) {
-            throw new Error(`Status must be "online", "idle", "dnd", or "invisible"`);
+            throw new DiscordUserBotsError(`Status must be "online", "idle", "dnd", or "invisible"`);
         }
         return await this.fetch_request(`users/@me/settings`, {
             body: JSON.stringify({
@@ -783,6 +788,7 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async set_custom_status(custom_status = CustomStatusOpts) {
+        this.call_check(arguments);
         return await this.fetch_request(`users/@me/settings`, {
             body: JSON.stringify({
                 custom_status: new constructs.CustomStatus(custom_status).contents,
@@ -795,12 +801,13 @@ class Client {
     /**
      * Creates an invite
      * @param {string} channel_id The channel
-     * @param {createInviteOpts} inviteOpts Invite options
+     * @param {CreateInviteOpts} inviteOpts Invite options
      * @returns {Promise<Object>} The response from Discord (invite code is under .code)
      */
-    async create_invite(channel_id, inviteOpts = createInviteOpts) {
+    async create_invite(channel_id, inviteOpts = CreateInviteOpts) {
+        this.call_check(arguments);
         const opts = {
-            createInviteOpts,
+            createInviteOpts: CreateInviteOpts,
             ...inviteOpts,
         };
         return await this.fetch_request(`/channels/${channel_id}/invites`, {

@@ -1,3 +1,17 @@
+/**
+ *
+ *  ## OVERVIEW
+ *
+ *  Specifies function option objects
+ *  Specifies general classes that parse data into a packet object.
+ *
+ *  ## WHEN CONTRIBUTING:
+ *
+ *  Make sure variable names are capitalized.
+ *  Options have the "Opts" suffix.
+ *
+ */
+
 const FS = require("node:fs");
 const Path = require("node:path");
 const FormData = require("form-data");
@@ -136,18 +150,26 @@ class SendMessage {
 }
 
 module.exports = {
-    fetchRequestOpts: {
+    FetchRequestOpts: {
         method: "GET",
         body: null,
         parse: true,
     },
-    createInviteOpts: {
+    CreateInviteOpts: {
         validate: null,
         max_age: 0,
         max_uses: 0,
         target_user_id: null,
         target_type: null,
         temporary: false,
+    },
+    BotConfigOpts: {
+        api: "v9",
+        wsurl: "wss://gateway.discord.gg/?encoding=json&v=9",
+        os: "linux",
+        bd: "holy",
+        language: "en-US",
+        typinginterval: 1000,
     },
     MentionsLimiterOpts,
     CustomStatusOpts,

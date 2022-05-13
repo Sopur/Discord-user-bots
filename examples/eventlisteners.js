@@ -1,30 +1,55 @@
 const Discord = require("discord-user-bots");
 const client = new Discord.Client("Token goes here.");
 
-client.on.heartbeat_sent = function () { }; // Will be used when a heartbeat is sent from the client
+client.on.discord_disconnect();
+client.on.gateway();
+client.on.heartbeat_sent();
+client.on.heartbeat_received();
+client.on.ready();
+client.on.voice_server_update(message);
+client.on.user_update(message);
+client.on.application_command_create(message);
+client.on.application_command_update(message);
+client.on.application_command_delete(message);
+client.on.interaction_create(message);
+client.on.guild_create(message);
+client.on.guild_delete(message);
+client.on.guild_role_create(message);
+client.on.guild_role_update(message);
+client.on.guild_role_delete(message);
+client.on.thread_create(message);
+client.on.thread_update(message);
+client.on.thread_delete(message);
+client.on.thread_list_sync(message);
+client.on.thread_member_update(message);
+client.on.thread_members_update(message);
+client.on.channel_create(message);
+client.on.channel_update(message);
+client.on.channel_delete(message);
+client.on.channel_pins_update(message);
+client.on.guild_member_add(message);
+client.on.guild_member_update(message);
+client.on.guild_member_remove(message);
+client.on.guild_ban_add(message);
+client.on.guild_ban_remove(message);
+client.on.guild_emojis_update(message);
+client.on.guild_stickers_update(message);
+client.on.guild_integrations_update(message);
+client.on.guild_webhooks_update(message);
+client.on.invite_create(message);
+client.on.invite_delete(message);
+client.on.voice_state_update(message);
+client.on.presence_update(message);
+client.on.message_create(message);
+client.on.message_update(message);
+client.on.message_delete(message);
+client.on.message_delete_bulk(message);
+client.on.message_reaction_add(message);
+client.on.message_reaction_remove(message);
+client.on.message_reaction_remove_all(message);
+client.on.message_reaction_remove_emoji(message);
+client.on.typing_start(message);
 
-client.on.heartbeat_received = function () { }; // Will be used when a heartbeat is received from the client
-
-client.on.ready = function () { }; // Will be used when the client is ready and connected to the Discord WebSocket server
-
-client.on.message_create = function (message) { }; // Will be used when a message is created
-
-client.on.message_edit = function (message) { }; // Will be used when a message is edited
-
-client.on.message_delete = function (message) { }; // Will be used when a message is deleted
-
-client.on.message_delete_bulk = function (messages) { }; // Will be used when messages are deleted in bulk
-
-client.on.embed_sent = function (embed) { }; // Will be used when a embed is sent
-
-client.on.presence_update = function (user) { }; // Will be used when a users presence is updated
-
-client.on.sessions_replace = function (sessions) { }; // Will be used when sessions are replaced
-
-client.on.message_read = function (message) { }; // Will be used when you/the client read a message
-
-client.on.channel_update = function (channel) { }; // Will be used when a channel is updated
-
-client.on.guild_join = function (guild) { }; // Will be used when a guild is added to your user
-
-client.on.guild_leave = function (guild) { }; // Will be used when a guild is removed from your user
+// Custom made ones
+client.on.embed_sent(message);
+client.on.message_edit(message);
