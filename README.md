@@ -38,7 +38,7 @@ client.on.message_create = function (message) {
 
 ## Mailing list
 
-Pings other users when a victim on your choice sends a message <br>
+Pings other users when a victim of your choice sends a message <br>
 **https://github.com/Sopur/Discord-user-bots/blob/main/examples/mailinglist.js**
 
 ## Un-sendable channel
