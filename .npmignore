@@ -1,3 +1,4 @@
 # Packages
 node_modules/
 tests/
+test*
