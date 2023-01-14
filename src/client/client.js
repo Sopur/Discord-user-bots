@@ -83,29 +83,7 @@ class Client {
                 }
                 case "READY": {
                     // Gateway res
-                    let user = message.d;
-                    this.user_settings = user.user_settings; // An object full of properties of settings
-                    this.user = user.user; // An object full of properties about the user like username etc
-                    this.tutorial = user.tutorial; // A property
-                    this.session_id = user.session_id; // String of random characters
-                    this.notes = user.notes; // An object that contains all the notes the user has on other people
-                    this.guild_join_requests = user.guild_join_requests; // An array
-                    this.user_guild_settings = user.user_guild_settings; // An array of Objects
-                    this.relationships = user.relationships; // An array of Objects
-                    this.read_state = user.read_state; // An array of Objects
-                    this.private_channels = user.private_channels; // An array of Objects
-                    this.presences = user.presences; // An array of Objects
-                    this.guilds = user.guilds; // An array of Objects
-                    this.guild_experiments = user.guild_experiments; // An array containing arrays
-                    this.geo_ordered_rtc_regions = user.geo_ordered_rtc_regions; // An array of strings
-                    this.friend_suggestion_count = user.friend_suggestion_count; // An integer
-                    this.experiments = user.experiments; // An array containing arrays
-                    this.country_code = user.country_code; // A string
-                    this.consents = user.consents; // An Object containing objects
-                    this.connected_accounts = user.connected_accounts; // An array of Objects
-                    this.analytics_token = user.analytics_token; // A string
-                    this._trace = user._trace; // Stringified json
-
+                    this.user = message.d;
                     this.ready_status = ReadyStates.CONNECTED;
                     this.on.ready();
                     break;
@@ -155,7 +133,7 @@ class Client {
                     break;
                 }
                 case "THREAD_CREATE": {
-                    this.on.thread_create(message.d);
+                    this.on.thread_join(message.d);
                     break;
                 }
                 case "THREAD_UPDATE": {
@@ -244,7 +222,142 @@ class Client {
                     break;
                 }
                 case "MESSAGE_CREATE": {
-                    this.on.message_create(message.d);
+                    switch (message.d.type) {
+                        case 1: {
+                            // RECIPIENT_ADD
+                            this.on.recipient_add(message.d);
+                            break;
+                        }
+                        case 2: {
+                            // RECIPIENT_REMOVE
+                            this.on.recipient_remove(message.d);
+                            break;
+                        }
+                        case 3: {
+                            // CALL
+                            this.on.call(message.d);
+                            break;
+                        }
+                        case 4: {
+                            // CHANNEL_NAME_CHANGE
+                            this.on.channel_name_change(message.d);
+                            break;
+                        }
+                        case 5: {
+                            // CHANNEL_ICON_CHANGE
+                            this.on.channel_icon_change(message.d);
+                            break;
+                        }
+                        case 6: {
+                            // CHANNEL_PINNED_MESSAGE
+                            this.on.channel_pinned_message(message.d);
+                            break;
+                        }
+                        case 7: {
+                            // USER_JOIN
+                            this.on.user_join(message.d);
+                            break;
+                        }
+                        case 8: {
+                            // GUILD_BOOST
+                            this.on.guild_boost(message.d);
+                            break;
+                        }
+                        case 9: {
+                            // GUILD_BOOST_TIER_1
+                            this.on.guild_boost_tier_1(message.d);
+                            break;
+                        }
+                        case 10: {
+                            // GUILD_BOOST_TIER_2
+                            this.on.guild_boost_tier_2(message.d);
+                            break;
+                        }
+                        case 11: {
+                            // GUILD_BOOST_TIER_3
+                            this.on.guild_boost_tier_3(message.d);
+                            break;
+                        }
+                        case 12: {
+                            // CHANNEL_FOLLOW_ADD
+                            this.on.channel_follow_add(message.d);
+                            break;
+                        }
+                        case 14: {
+                            // GUILD_DISCOVERY_DISQUALIFIED
+                            this.on.guild_discovery_disqualified(message.d);
+                            break;
+                        }
+                        case 15: {
+                            // GUILD_DISCOVERY_REQUALIFIED
+                            this.on.guild_discovery_requalified(message.d);
+                            break;
+                        }
+                        case 16: {
+                            // GUILD_DISCOVERY_GRACE_PERIOD_INITIAL_WARNING
+                            this.on.guild_discovery_grace_period_initial_warning(message.d);
+                            break;
+                        }
+                        case 17: {
+                            // GUILD_DISCOVERY_GRACE_PERIOD_FINAL_WARNING
+                            this.on.guild_discovery_grace_period_final_warning(message.d);
+                            break;
+                        }
+                        case 18: {
+                            // THREAD_CREATED
+                            this.on.thread_create(message.d);
+                            break;
+                        }
+                        case 19: {
+                            // REPLY
+                            this.on.reply(message.d);
+                            break;
+                        }
+                        case 20: {
+                            // CHAT_INPUT_COMMAND
+                            this.on.chat_input_command(message.d);
+                            break;
+                        }
+                        case 21: {
+                            // THREAD_STARTER_MESSAGE
+                            this.on.thread_starter_message(message.d);
+                            break;
+                        }
+                        case 22: {
+                            // GUILD_INVITE_REMINDER
+                            this.on.guild_invite_reminder(message.d);
+                            break;
+                        }
+                        case 23: {
+                            // CONTEXT_MENU_COMMAND
+                            this.on.context_menu_command(message.d);
+                            break;
+                        }
+                        case 24: {
+                            // AUTO_MODERATION_ACTION
+                            this.on.auto_moderation_action(message.d);
+                            break;
+                        }
+                        case 25: {
+                            // ROLE_SUBSCRIPTION_PURCHASE
+                            this.on.role_subscription_purchase(message.d);
+                            break;
+                        }
+                        case 26: {
+                            // INTERACTION_PREMIUM_UPSELL
+                            this.on.interaction_premium_upsell(message.d);
+                            break;
+                        }
+                        case 27: {
+                            // GUILD_APPLICATION_PREMIUM_SUBSCRIPTION
+                            this.on.guild_application_premium_subscription(message.d);
+                            break;
+                        }
+                        default: {
+                            // DEFAULT
+                            this.on.message_create(message.d);
+                        }
+                    }
                     break;
                 }
                 case "MESSAGE_UPDATE": {
@@ -728,6 +841,20 @@ class Client {
         return await this.fetch_request(`channels/${thread_id}`, {
             body: null,
             method: "DELETE",
+            parse: false,
+        });
+    }
+
+    /**
+     * Joins a thread
+     * @param {string} thread_id The ID of the thread to join
+     * @returns {Promise<Object>} The response from Discord
+     */
+    async join_thread(thread_id) {
+        this.call_check(arguments);
+        return await this.fetch_request(`/channels/${thread_id}/thread-members/@me`, {
+            body: null,
+            method: "PUT",
             parse: false,
         });
     }

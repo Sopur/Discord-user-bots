@@ -11,11 +11,6 @@
  */
 
 class DiscordEvents {
-    discord_disconnect() {}
-    gateway() {}
-    heartbeat_sent() {}
-    heartbeat_received() {}
-    ready() {}
     voice_server_update(message) {}
     user_update(message) {}
     application_command_create(message) {}
@@ -28,6 +23,7 @@ class DiscordEvents {
     guild_role_update(message) {}
     guild_role_delete(message) {}
     thread_create(message) {}
+    thread_join(message) {}
     thread_update(message) {}
     thread_delete(message) {}
     thread_list_sync(message) {}
@@ -61,8 +57,38 @@ class DiscordEvents {
     typing_start(message) {}
 
     // Custom made ones
+    discord_disconnect() {}
+    gateway() {}
+    heartbeat_sent() {}
+    heartbeat_received() {}
+    ready() {}
     embed_sent(message) {}
     message_edit(message) {}
+    recipient_add(message) {}
+    recipient_remove(message) {}
+    call(message) {}
+    channel_name_change(message) {}
+    channel_icon_change(message) {}
+    channel_pinned_message(message) {}
+    user_join(message) {}
+    guild_boost(message) {}
+    guild_boost_tier_1(message) {}
+    guild_boost_tier_2(message) {}
+    guild_boost_tier_3(message) {}
+    channel_follow_add(message) {}
+    guild_discovery_disqualified(message) {}
+    guild_discovery_requalified(message) {}
+    guild_discovery_grace_period_initial_warning(message) {}
+    guild_discovery_grace_period_final_warning(message) {}
+    reply(message) {}
+    chat_input_command(message) {}
+    thread_starter_message(message) {}
+    guild_invite_reminder(message) {}
+    context_menu_command(message) {}
+    auto_moderation_action(message) {}
+    role_subscription_purchase(message) {}
+    interaction_premium_upsell(message) {}
+    guild_application_premium_subscription(message) {}
 }
 
 module.exports = DiscordEvents;

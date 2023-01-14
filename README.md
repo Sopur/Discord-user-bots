@@ -203,6 +203,11 @@ client.delete_thread(
     "888825512510779414" // The ID of the thread to delete
 );
 
+// Joins a thread
+client.join_thread(
+    "888825512510779414" // The ID of the thread to join
+);
+
 // Adds a reaction to a message
 client.add_reaction(
     "914533528245506068", // The message to add a reaction to
@@ -262,60 +267,86 @@ client.set_config({
 # Event listeners
 
 ```js
-client.on = {
-    discord_disconnect: function () {},
-    gateway: function () {},
-    heartbeat_sent: function () {},
-    heartbeat_received: function () {},
-    ready: function () {},
-    voice_server_update: function (message) {},
-    user_update: function (message) {},
-    application_command_create: function (message) {},
-    application_command_update: function (message) {},
-    application_command_delete: function (message) {},
-    interaction_create: function (message) {},
-    guild_create: function (message) {},
-    guild_delete: function (message) {},
-    guild_role_create: function (message) {},
-    guild_role_update: function (message) {},
-    guild_role_delete: function (message) {},
-    thread_create: function (message) {},
-    thread_update: function (message) {},
-    thread_delete: function (message) {},
-    thread_list_sync: function (message) {},
-    thread_member_update: function (message) {},
-    thread_members_update: function (message) {},
-    channel_create: function (message) {},
-    channel_update: function (message) {},
-    channel_delete: function (message) {},
-    channel_pins_update: function (message) {},
-    guild_member_add: function (message) {},
-    guild_member_update: function (message) {},
-    guild_member_remove: function (message) {},
-    guild_ban_add: function (message) {},
-    guild_ban_remove: function (message) {},
-    guild_emojis_update: function (message) {},
-    guild_stickers_update: function (message) {},
-    guild_integrations_update: function (message) {},
-    guild_webhooks_update: function (message) {},
-    invite_create: function (message) {},
-    invite_delete: function (message) {},
-    voice_state_update: function (message) {},
-    presence_update: function (message) {},
-    message_create: function (message) {},
-    message_update: function (message) {},
-    message_delete: function (message) {},
-    message_delete_bulk: function (message) {},
-    message_reaction_add: function (message) {},
-    message_reaction_remove: function (message) {},
-    message_reaction_remove_all: function (message) {},
-    message_reaction_remove_emoji: function (message) {},
-    typing_start: function (message) {},
+class DiscordEvents {
+    voice_server_update(message) {}
+    user_update(message) {}
+    application_command_create(message) {}
+    application_command_update(message) {}
+    application_command_delete(message) {}
+    interaction_create(message) {}
+    guild_create(message) {}
+    guild_delete(message) {}
+    guild_role_create(message) {}
+    guild_role_update(message) {}
+    guild_role_delete(message) {}
+    thread_create(message) {}
+    thread_join(message) {}
+    thread_update(message) {}
+    thread_delete(message) {}
+    thread_list_sync(message) {}
+    thread_member_update(message) {}
+    thread_members_update(message) {}
+    channel_create(message) {}
+    channel_update(message) {}
+    channel_delete(message) {}
+    channel_pins_update(message) {}
+    guild_member_add(message) {}
+    guild_member_update(message) {}
+    guild_member_remove(message) {}
+    guild_ban_add(message) {}
+    guild_ban_remove(message) {}
+    guild_emojis_update(message) {}
+    guild_stickers_update(message) {}
+    guild_integrations_update(message) {}
+    guild_webhooks_update(message) {}
+    invite_create(message) {}
+    invite_delete(message) {}
+    voice_state_update(message) {}
+    presence_update(message) {}
+    message_create(message) {}
+    message_update(message) {}
+    message_delete(message) {}
+    message_delete_bulk(message) {}
+    message_reaction_add(message) {}
+    message_reaction_remove(message) {}
+    message_reaction_remove_all(message) {}
+    message_reaction_remove_emoji(message) {}
+    typing_start(message) {}
 
     // Custom made ones
-    embed_sent: function (message) {},
-    message_edit: function (message) {},
-};
+    discord_disconnect() {}
+    gateway() {}
+    heartbeat_sent() {}
+    heartbeat_received() {}
+    ready() {}
+    embed_sent(message) {}
+    message_edit(message) {}
+    recipient_add(message) {}
+    recipient_remove(message) {}
+    call(message) {}
+    channel_name_change(message) {}
+    channel_icon_change(message) {}
+    channel_pinned_message(message) {}
+    user_join(message) {}
+    guild_boost(message) {}
+    guild_boost_tier_1(message) {}
+    guild_boost_tier_2(message) {}
+    guild_boost_tier_3(message) {}
+    channel_follow_add(message) {}
+    guild_discovery_disqualified(message) {}
+    guild_discovery_requalified(message) {}
+    guild_discovery_grace_period_initial_warning(message) {}
+    guild_discovery_grace_period_final_warning(message) {}
+    reply(message) {}
+    chat_input_command(message) {}
+    thread_starter_message(message) {}
+    guild_invite_reminder(message) {}
+    context_menu_command(message) {}
+    auto_moderation_action(message) {}
+    role_subscription_purchase(message) {}
+    interaction_premium_upsell(message) {}
+    guild_application_premium_subscription(message) {}
+}
 ```
 
 # Properties
@@ -445,22 +476,8 @@ this._trace = ["stringified-json"];
 
 # What's new
 
-    -   Changed license in README
-    -   Fixed typos
-    -   Added contributing instructions to src/README.md
-    -   Added GitHub user Imraj to the special thanks section
-    -   Reformatted files
-    -   Added overviews and contributing instructions to all files
-    -   Updated the event listener example
-    -   Fixed the set_custom_status and create_invite functions
-    -   Made the set_config function use options as an object instead of taking everything separate as parameters
-    -   Allowed the config to be passed into the Client constructor as the second argument
-    -   Added close function
-    -   Added terminate function
-    -   Updated documentation
-    -   Added custom errors
-    -   Made the Discord-User-Bots version available in the exports object
-    -   Added native fetch support (Only works for Node version 18.x and above)
+    -   Added 27 new events because Discord is very misleading
+    -   Added join_thread function
 
 # Special Thanks To
 
