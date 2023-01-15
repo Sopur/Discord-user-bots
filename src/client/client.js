@@ -60,7 +60,7 @@ class Client {
      * @private
      */
     setEvents() {
-        this.ready_state = ReadyStates.CONNECTING;
+        this.ready_status = ReadyStates.CONNECTING;
         this.ws = new WebSocket(this.config.wsurl);
         this.ws.on("message", (message) => {
             message = JSON.parse(message);
@@ -84,6 +84,11 @@ class Client {
                 case "READY": {
                     // Gateway res
                     this.user = message.d;
+                    break;
+                }
+                case "READY_SUPPLEMENTAL": {
+                    // Extra splash screen info
+                    this.user.supplemental = message.d;
                     this.ready_status = ReadyStates.CONNECTED;
                     this.on.ready();
                     break;
@@ -361,20 +366,13 @@ class Client {
                     break;
                 }
                 case "MESSAGE_UPDATE": {
-                    if (message.d.flags !== undefined && message.d.flags << 5 === 0 && Object.keys(message.d).length === 4) {
-                        this.on.thread_delete(message.d);
-                        break;
-                    }
-                    switch (message.type) {
-                        case undefined: {
-                            // Embed
-                            this.on.embed_sent(message.d);
-                            break;
-                        }
-                        case 0: {
-                            // Message edit
-                            this.on.message_edit(message.d);
-                            break;
+                    if (message.d.content !== undefined) {
+                        this.on.message_edit(message.d);
+                    } else if (message.d.flags !== undefined) {
+                        if (message.d.flags === 0) {
+                            this.on.thread_delete(message.d);
+                        } else if (message.d.flags === 32) {
+                            this.on.thread_create(message.d);
                         }
                     }
                     break;

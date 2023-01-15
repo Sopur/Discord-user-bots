@@ -62,7 +62,6 @@ class DiscordEvents {
     heartbeat_sent() {}
     heartbeat_received() {}
     ready() {}
-    embed_sent(message) {}
     message_edit(message) {}
     recipient_add(message) {}
     recipient_remove(message) {}

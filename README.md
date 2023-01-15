@@ -319,7 +319,6 @@ class DiscordEvents {
     heartbeat_sent() {}
     heartbeat_received() {}
     ready() {}
-    embed_sent(message) {}
     message_edit(message) {}
     recipient_add(message) {}
     recipient_remove(message) {}
@@ -358,126 +357,42 @@ class DiscordEvents {
 **Here are some of them:**
 
 ```js
-this.user_settings = user.user_settings; // An object full of properties of settings
-
-this.user = user.user; // An object full of properties about the user like username etc
-
-this.tutorial = user.tutorial; // A property
-
-this.session_id = user.session_id; // String of random characters
-
-this.notes = user.notes; // An object that contains all the notes the user has on other people
-
-this.guild_join_requests = user.guild_join_requests; // An array
-
-this.user_guild_settings = user.user_guild_settings; // An array of Objects
-
-this.relationships = user.relationships; // An array of Objects
-
-this.read_state = user.read_state; // An array of Objects
-
-this.private_channels = user.private_channels; // An array of Objects
-
-this.presences = user.presences; // An array of Objects
-
-this.guilds = user.guilds; // An array of Objects
-
-this.guild_experiments = user.guild_experiments; // An array containing arrays
-
-this.geo_ordered_rtc_regions = user.geo_ordered_rtc_regions; // An array of strings
-
-this.friend_suggestion_count = user.friend_suggestion_count; // An integer
-
-this.experiments = user.experiments; // An array containing arrays
-
-this.country_code = user.country_code; // A string
-
-this.consents = user.consents; // An Object containing objects
-
-this.connected_accounts = user.connected_accounts; // An array of Objects
-
-this.analytics_token = user.analytics_token; // A string
-
-this._trace = user._trace; // Stringified json
-```
-
-# Now here are those properties in a more readable form:
-
-```js
-this.user_settings = {
-    timezone_offset: timezone - offset - goes - here, // (int)
-    theme: "dark",
-    stream_notifications_enabled: true,
-    status: "invisible",
-    show_current_game: true,
-    restricted_guilds: [],
-    render_reactions: true,
-    render_embeds: true,
-    native_phone_integration_enabled: true,
-    message_display_compact: false,
-    locale: "locale-goes-here",
-    inline_embed_media: true,
-    inline_attachment_media: true,
-    guild_positions: [Array],
-    guild_folders: [Array],
-    gif_auto_play: true,
-    friend_source_flags: [Object],
-    explicit_content_filter: 2,
-    enable_tts_command: true,
-    disable_games_tab: false,
-    developer_mode: true,
-    detect_platform_accounts: true,
-    default_guilds_restricted: false,
-    custom_status: null,
-    convert_emoticons: true,
-    contact_sync_enabled: false,
-    animate_stickers: 0,
-    animate_emoji: true,
-    allow_accessibility_detection: false,
-    afk_timeout: 600,
-};
-this.user_guild_settings = [[Object]];
-this.user = {
-    verified: true,
-    username: "Sopur",
-    premium: false,
-    phone: null,
-    nsfw_allowed: true,
-    mobile: true,
-    mfa_enabled: false,
-    id: "id-goes-here",
-    flags: 0,
-    email: "email-goes-here",
-    discriminator: "discriminator-goes-here",
-    desktop: true,
-    avatar: "avatar-goes-here",
-};
-this.tutorial = null;
-this.session_id = "session_id-goes-here";
-this.relationships = [[Object]];
-this.read_state = [[Object]];
-this.private_channels = [[Object]];
-this.presences = [[Object]];
-this.notes = {
-    "id-goes-here": "note-goes-here",
-};
-this.guilds = [[Object]];
-this.guild_join_requests = [];
-this.guild_experiments = [[Array]];
-this.geo_ordered_rtc_regions = ["geo", "ordered", "rtc", "regions", "go", "here"];
-this.friend_suggestion_count = 0;
-this.experiments = [[Array]];
-this.country_code = "country-goes-here";
-this.consents = { personalization: [Object] };
-this.connected_accounts = [[Object]];
-this.analytics_token = "token-goes-here";
-this._trace = ["stringified-json"];
+this.user.v = user.v; // number
+this.user.users = user.users; // array
+this.user.user_settings_proto = user.user_settings_proto; // array
+this.user.user_settings = user.user_settings; // object
+this.user.user_guild_settings = user.user_guild_settings; // object
+this.user.user = user.user; // object
+this.user.tutorial = user.tutorial; // object
+this.user.sessions = user.sessions; // array
+this.user.session_type = user.session_type; // array
+this.user.session_id = user.session_id; // array
+this.user.resume_gateway_url = user.resume_gateway_url; // array
+this.user.relationships = user.relationships; // array
+this.user.read_state = user.read_state; // object
+this.user.private_channels = user.private_channels; // array
+this.user.merged_members = user.merged_members; // array
+this.user.guilds = user.guilds; // array
+this.user.guild_join_requests = user.guild_join_requests; // array
+this.user.guild_experiments = user.guild_experiments; // array
+this.user.geo_ordered_rtc_regions = user.geo_ordered_rtc_regions; // array
+this.user.friend_suggestion_count = user.friend_suggestion_count; // number
+this.user.experiments = user.experiments; // array
+this.user.country_code = user.country_code; // array
+this.user.consents = user.consents; // object
+this.user.connected_accounts = user.connected_accounts; // array
+this.user.auth_session_id_hash = user.auth_session_id_hash; // array
+this.user.api_code_version = user.api_code_version; // number
+this.user.analytics_token = user.analytics_token; // array
+this.user._trace = user._trace; // array
+this.user.supplemental = user.supplemental; // object
 ```
 
 # What's new
 
     -   Added 27 new events because Discord is very misleading
     -   Added join_thread function
+    -   Added client supplemental information
 
 # Special Thanks To
 
