@@ -55,6 +55,8 @@ class DiscordEvents {
     message_reaction_remove_all(message) {}
     message_reaction_remove_emoji(message) {}
     typing_start(message) {}
+    relationship_add(message) {}
+    relationship_remove(message) {}
 
     // Custom made ones
     discord_disconnect() {}
