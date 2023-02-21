@@ -41,7 +41,7 @@ class Client {
             ...config,
         };
         this.token = token;
-        this.lastHeartBeat = undefined;
+        this.messageCounter = 0;
         this.ready_status = ReadyStates.OFFLINE;
         this.typingLoop = function () {};
         this.on = new DiscordEvents();
@@ -64,6 +64,7 @@ class Client {
         this.ws = new WebSocket(this.config.wsurl);
         this.ws.on("message", (message) => {
             message = JSON.parse(message);
+            if (message.t !== null) this.messageCounter += 1;
             switch (message.t) {
                 case null: {
                     // gateway
@@ -71,7 +72,8 @@ class Client {
                         if (message.d === null) throw new DiscordAPIError("Discord refused a connection.");
                         this.heartbeattimer = message.d.heartbeat_interval;
                         this.heartbeatinterval = setInterval(() => {
-                            this.ws.send(JSON.stringify(new packets.HeartBeat(this.lastHeartBeat)));
+                            const packet = new packets.HeartBeat(this.messageCounter);
+                            this.ws.send(JSON.stringify(packet));
                             this.on.heartbeat_sent();
                         }, this.heartbeattimer);
                         this.ws.send(JSON.stringify(new packets.GateWayOpen(this.token, this.config)));
@@ -405,6 +407,14 @@ class Client {
                     this.on.typing_start(message.d);
                     break;
                 }
+                case "RELATIONSHIP_ADD": {
+                  this.on.relationship_add(message.d);
+                  break;
+                }
+                case "RELATIONSHIP_REMOVE": {
+                  this.on.relationship_remove(message.d);
+                  break;
+                }
             }
         });
 
@@ -517,7 +527,8 @@ class Client {
                 mode: "cors",
                 credentials: "include",
             }).then((response) => {
-                if (options.parse) {
+                if (response.status === 204) { res(undefined); }
+                else if (options.parse) {
                     response.json().then((m) => {
                         res(m);
                     });
@@ -939,6 +950,22 @@ class Client {
         return await this.fetch_request(`/channels/${channel_id}/invites`, {
             method: "POST",
             body: JSON.stringify(opts),
+            parse: true,
+        });
+    }
+
+
+    /**
+     * Accepts a friend request
+     * @param {string} channel_id The channel
+     * @param {CreateInviteOpts} inviteOpts Invite options
+     * @returns {Promise<Object>} The response from Discord (invite code is under .code)
+     */
+    async accept_friend_request(user_id) {
+        this.call_check(arguments);
+        return await this.fetch_request(`/users/@me/relationships/${user_id}`, {
+            method: "PUT",
+            body: JSON.stringify({}),
             parse: true,
         });
     }
