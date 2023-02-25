@@ -1,5 +1,5 @@
 const Discord = require("../src/exports.js");
-const client = new Discord.Client("Token"); // Token to log into
+const client = new Discord.Client("Token goes here.");
 
 // Config
 const banned = ["`", "https", "@", "\n"]; // Do not repeat these
@@ -19,7 +19,9 @@ function rateLimit() {
 }
 function sendMailingList(message, channel) {
     mailingList.forEach((id) => {
-        client.send(`<@!${id || 0}> ${message || errorMessage}`, channel || welcomeChannel);
+        client.send(channel || welcomeChannel, {
+            content: `<@!${id || 0}> ${message || errorMessage}`,
+        });
     });
 }
 

@@ -58,6 +58,7 @@ class DiscordEvents {
 
     // Custom made ones
     discord_disconnect() {}
+    discord_reconnect() {}
     gateway() {}
     heartbeat_sent() {}
     heartbeat_received() {}

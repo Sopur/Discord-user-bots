@@ -170,6 +170,7 @@ module.exports = {
         bd: "holy",
         language: "en-US",
         typinginterval: 1000,
+        proxy: undefined,
     },
     MentionsLimiterOpts,
     CustomStatusOpts,

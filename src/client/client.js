@@ -2,7 +2,7 @@
  *
  *  ## OVERVIEW
  *
- *  This files handles the main client definition.
+ *  Defines the main client class.
  *  It includes the event handlers, and action functions.
  *
  *  ## WHEN CONTRIBUTING:
@@ -17,13 +17,14 @@
  */
 
 const WebSocket = require("ws");
-const NodeFetch = require("node-fetch");
 const { FetchRequestOpts, SendMessageOpts, CustomStatusOpts, CreateInviteOpts, BotConfigOpts } = require("./constructs.js");
 const { DiscordUserBotsError, DiscordAPIError, DiscordUserBotsInternalError } = require("../util/error.js");
 const { ReadyStates } = require("../util/enums.js");
 const DiscordEvents = require("./events.js");
 const constructs = require("./constructs.js");
 const packets = require("../util/packets.js");
+const ClientData = require("./auth/data.js");
+const Requester = require("./auth/fetch.js");
 
 class Client {
     /**
@@ -45,10 +46,9 @@ class Client {
         this.ready_status = ReadyStates.OFFLINE;
         this.typingLoop = function () {};
         this.on = new DiscordEvents();
-
-        // If node is version 18.x or above use the native fetch, otherwise the node-fetch.
-        this.requester = typeof fetch !== "undefined" ? fetch : NodeFetch;
-
+        this.requester = new Requester();
+        this.clientData = new ClientData();
+        this.clientData.authorization = this.token;
         this.check_token().then((res) => {
             if (res === true) this.setEvents();
             else throw new DiscordAPIError(`Discord rejected token "${token}" (Not valid)`);
@@ -60,6 +60,7 @@ class Client {
      * @private
      */
     setEvents() {
+        this.clientData.gen(this.requester);
         this.ready_status = ReadyStates.CONNECTING;
         this.ws = new WebSocket(this.config.wsurl);
         this.ws.on("message", (message) => {
@@ -459,10 +460,8 @@ class Client {
      */
     check_token() {
         return new Promise((resolve) => {
-            this.requester(`https://discord.com/api/${this.config.api}/users/@me`, new packets.TokenCheck(this.token)).then((r) => {
-                r.json().then((res) => {
-                    resolve(res.message !== "401: Unauthorized");
-                });
+            this.requester.fetch_request(`users/@me`, undefined, this.clientData, "GET").then((res) => {
+                resolve(res.message !== "401: Unauthorized");
             });
         });
     }
@@ -497,35 +496,13 @@ class Client {
             ...options,
         };
         if (typeof link !== "string") throw new DiscordUserBotsInternalError("Couldn't fetch");
-        return new Promise((res, rej) => {
-            this.requester(`https://discord.com/api/${this.config.api}/${link}`, {
-                headers: {
-                    accept: "*/*",
-                    "accept-language": this.config.language,
-                    authorization: this.token,
-                    "content-type": "application/json",
-                    "sec-fetch-dest": "empty",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-site": "same-origin",
-                    "x-discord-locale": this.config.language,
-                    ...(options.isMultipartFormData ? options.body.getHeaders() : {}),
-                },
-                referrer: `https://discord.com/channels/@me`,
-                referrerPolicy: "no-referrer-when-downgrade",
-                body: options.body,
-                method: options.method,
-                mode: "cors",
-                credentials: "include",
-            }).then((response) => {
-                if (options.parse) {
-                    response.json().then((m) => {
-                        res(m);
-                    });
-                } else {
-                    res(response);
-                }
-            });
-        });
+        return this.requester.fetch_request(
+            link,
+            options.body,
+            this.clientData,
+            options.method,
+            options.isMultipartFormData ? options.body.getHeaders() : {}
+        );
     }
 
     /**
@@ -572,8 +549,9 @@ class Client {
     async join_guild(invite) {
         this.call_check(arguments);
         invite = this.parse_invite_link(invite);
-        return await this.fetch_request(`invites/${this.parse_invite_link(invite)}`, {
-            body: "{}",
+        console.log(invite);
+        return await this.fetch_request(`invites/${invite}`, {
+            body: JSON.stringify({}),
             method: "POST",
             parse: true,
         });
@@ -601,9 +579,9 @@ class Client {
      */
     async leave_guild(guild_id) {
         this.call_check(arguments);
-        return await this.fetch_request(`users/@me/guilds/${guild_id}/delete`, {
+        return await this.fetch_request(`users/@me/guilds/${guild_id}`, {
             method: "DELETE",
-            body: null,
+            body: JSON.stringify({ lurking: false }),
             parse: false,
         });
     }

@@ -1,5 +1,5 @@
 const Discord = require("../src/exports.js");
-const client = new Discord.Client("Token"); // Token to log into
+const client = new Discord.Client("Token goes here."); // Token to log into
 
 // Config
 const targetChannels = [""]; // Array of channel IDs to preform on
