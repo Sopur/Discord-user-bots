@@ -126,7 +126,7 @@ class SendMessage {
             options.attachments = attachments;
         }
 
-        this.content = JSON.stringify({
+        this.content = {
             content: options.content,
             tts: options.tts,
             embeds: options.embeds,
@@ -140,7 +140,7 @@ class SendMessage {
             components: null,
             sticker_ids: options.stickers,
             ...(attachments.length > 0 ? { attachments } : {}),
-        });
+        };
 
         if (this.isMultipartFormData) {
             formData.append("payload_json", this.content);
@@ -153,7 +153,6 @@ module.exports = {
     FetchRequestOpts: {
         method: "GET",
         body: null,
-        parse: true,
     },
     CreateInviteOpts: {
         validate: null,
@@ -166,11 +165,10 @@ module.exports = {
     BotConfigOpts: {
         api: "v9",
         wsurl: "wss://gateway.discord.gg/?encoding=json&v=9",
-        os: "linux",
-        bd: "holy",
-        language: "en-US",
+        url: "https://discord.com",
         typinginterval: 1000,
         proxy: undefined,
+        autoReconnect: true,
     },
     MentionsLimiterOpts,
     CustomStatusOpts,

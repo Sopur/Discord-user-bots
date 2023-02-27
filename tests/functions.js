@@ -1,15 +1,17 @@
-async function sleep() {
-    return new Promise(async (res) => setTimeout(res, 2000));
+const interface = require("readline/promises").createInterface({ input: process.stdin, output: process.stdout });
+
+async function sleep(ms) {
+    return new Promise(async (res) => setTimeout(res, ms));
 }
 
 async function test(thing) {
-    await sleep();
-    console.log(`[WARN] ==> TESTING: ${thing}`);
+    await interface.question("[ENTER] ");
+    console.log(`[TESTING] ${thing}`);
 }
 
 void (async function main() {
     const Discord = require("../src/exports.js");
-    const token = await require("readline/promises").createInterface({ input: process.stdin, output: process.stdout }).question("Token: ");
+    const token = await interface.question("Token: ");
     const client = new Discord.Client(token);
 
     client.on.ready = async function () {
@@ -28,6 +30,8 @@ void (async function main() {
                 content: "Hello from discord-user-bots!",
             })
         ).id;
+
+        console.log(firstMessage);
 
         await test("fetch_messages");
         console.log(await client.fetch_messages(10, channel));
@@ -54,10 +58,9 @@ void (async function main() {
 
         await test("stop_type");
         client.stop_type();
-        await sleep();
 
         await test("group");
-        const group = (await client.group([client.user.id, "869140419613708289"])).id;
+        const group = (await client.group([client.info.user.id, "869140419613708289"])).id;
 
         await test("rename_group");
         await client.rename_group("Renamed", group);
@@ -80,6 +83,9 @@ void (async function main() {
         await test("add_reaction");
         await client.add_reaction(secondMessage, channel, "🤖");
 
+        await test("remove_reaction");
+        await client.remove_reaction(secondMessage, channel, "🤖");
+
         await test("change_status");
         await client.change_status("idle");
 
@@ -91,7 +97,11 @@ void (async function main() {
         });
 
         await test("create_invite");
-        console.log((await client.create_invite(channel)).code);
+        const invite = (await client.create_invite(channel)).code;
+        console.log(invite);
+
+        await test("get_invite_info");
+        console.log(await client.get_invite_info(invite));
 
         await test("parse_invite_link");
         console.log(client.parse_invite_link("https://discord.gg/WADasB31") === "WADasB31");
@@ -101,9 +111,9 @@ void (async function main() {
         console.log(client.parse_invite_link("WADasB31") === "WADasB31");
         console.log(client.parse_invite_link("WADasB31/") === "WADasB31");
 
-        await test("leave_guild");
+        await test("delete_guild");
         await client.delete_guild(guild);
         console.log("Done.");
-        process.exit();
+        process.exit(0);
     };
 })();

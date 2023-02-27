@@ -2,7 +2,7 @@
 
 # Sopur's user bot library
 
-    Hello! This is a user bot library that allows for complete control over user accounts, and the ability to create accounts.
+    Hello! This is a user bot library that allows for complete control over user accounts.
     Some examples of extreme examples are the ability to access user notes, friend counts, and the default Discord tutorial.
     This library is still being worked on more functions will be added soon.
 
@@ -30,36 +30,12 @@ client.on.message_create = function (message) {
 };
 ```
 
-## Creating an account
-
-For comments: **https://github.com/Sopur/Discord-user-bots/blob/main/examples/create-account.js**
-
-```js
-// For comments and more detail: https://github.com/Sopur/Discord-user-bots/blob/main/examples/create-account.js
-const Discord = require("discord-user-bots");
-const Guru = require("captchaguru");
-const factory = new Discord.AccountFactory();
-const proxy = "xxx.xxx.xxx.xxx:xxx";
-const proxyType = "HTTP";
-const accountName = "discord-user-bots account!";
-
-async function solveCaptcha(captchaInfo) {
-    const solver = new Guru("captcha.guru API token goes here.", captchaInfo.service, captchaInfo.siteKey, captchaInfo.siteURL, proxy, proxyType);
-    return solver.solve();
-}
-
-void (async function main() {
-    const token = await factory.createAccount(accountName, `${proxyType.toLowerCase()}://${proxy}`, solveCaptcha);
-    console.log("Created account: ", token);
-
-    const client = new Discord.Client(token);
-    client.on.ready = function () {
-        console.log("Created account online!");
-    };
-})();
-```
-
 # Practical examples
+
+## Message logger
+
+Logs all messages sent in all the servers the client is in. <br>
+**https://github.com/Sopur/Discord-user-bots/blob/main/examples/log.js**
 
 ## Mailing list
 
@@ -103,22 +79,8 @@ Uses OpenAI's GPT-3 model as a chat bot. <br>
 
 **https://github.com/Sopur/Discord-user-bots/blob/main/doc/properties.js**
 
-## Discord.AccountFactory
-
-### Functions
-
-    This library contains code necessary for creating Discord accounts. See the factory.js file in the doc/ folder for documentation on function.
-
-**https://github.com/Sopur/Discord-user-bots/blob/main/doc/factory.js**
-
-# Contributing
-
-See the README file in the source folder for instructions for contributing and what each file does.
-**https://github.com/Sopur/Discord-user-bots/blob/main/src/README.md**
-
 # What's new in 1.6.0
 
--   Added account creation (Discord.AccountFactory)
 -   Added accept_friend_request function (Thanks lf94)
 -   Added relationship_add event listener (Thanks lf94)
 -   Added relationship_remove event listener (Thanks lf94)
@@ -126,13 +88,13 @@ See the README file in the source folder for instructions for contributing and w
 -   Added reconnect event listener
 -   Added reconnect function
 -   Added autoReconnect option to config
--   Added examples create-account.js, clean-up.js, and chat-bot.js
+-   Added examples create-account.js, clean-up.js, chat-bot.js, and log.js
 -   Added science/experiment tracking logic
 -   Added cookie logic
 -   Added uuid logic
 -   Added xtrack logic
 -   Fixed disconnection problem (Thanks lf94)
--   Fixed guild_join function
+-   Fixed group function
 -   Fixed examples
 -   Fixed README
 

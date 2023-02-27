@@ -17,14 +17,15 @@
  */
 
 const WebSocket = require("ws");
+const ProxyHTTPS = require("https-proxy-agent");
 const { FetchRequestOpts, SendMessageOpts, CustomStatusOpts, CreateInviteOpts, BotConfigOpts } = require("./constructs.js");
 const { DiscordUserBotsError, DiscordAPIError, DiscordUserBotsInternalError } = require("../util/error.js");
 const { ReadyStates } = require("../util/enums.js");
 const DiscordEvents = require("./events.js");
 const constructs = require("./constructs.js");
 const packets = require("../util/packets.js");
-const ClientData = require("./auth/data.js");
-const Requester = require("./auth/fetch.js");
+const ClientData = require("../auth/data.js");
+const Requester = require("../auth/fetch.js");
 
 class Client {
     /**
@@ -39,19 +40,22 @@ class Client {
         if (typeof token !== "string") throw new DiscordUserBotsError("Invalid token");
         this.config = {
             ...BotConfigOpts,
-            ...config,
         };
         this.token = token;
-        this.lastHeartBeat = undefined;
+        this.messageCounter = 0;
+        this.readyStatusCallback = function () {};
         this.ready_status = ReadyStates.OFFLINE;
         this.typingLoop = function () {};
         this.on = new DiscordEvents();
         this.requester = new Requester();
         this.clientData = new ClientData();
         this.clientData.authorization = this.token;
-        this.check_token().then((res) => {
-            if (res === true) this.setEvents();
-            else throw new DiscordAPIError(`Discord rejected token "${token}" (Not valid)`);
+        this.set_config(config);
+        this.check_token().then(async (res) => {
+            if (res === true) {
+                await this.clientData.gen(this.requester);
+                this.createWS();
+            } else throw new DiscordAPIError(`Discord rejected token "${token}" (Not valid)`);
         });
     }
 
@@ -59,12 +63,16 @@ class Client {
      * Used after the token checking to set everything
      * @private
      */
-    setEvents() {
-        this.clientData.gen(this.requester);
+    createWS() {
         this.ready_status = ReadyStates.CONNECTING;
-        this.ws = new WebSocket(this.config.wsurl);
+
+        this.ws = new WebSocket(this.config.wsurl, {
+            origin: this.requester.url,
+            agent: this.requester.proxy,
+        });
         this.ws.on("message", (message) => {
             message = JSON.parse(message);
+            if (message.t !== null) this.messageCounter += 1;
             switch (message.t) {
                 case null: {
                     // gateway
@@ -72,7 +80,8 @@ class Client {
                         if (message.d === null) throw new DiscordAPIError("Discord refused a connection.");
                         this.heartbeattimer = message.d.heartbeat_interval;
                         this.heartbeatinterval = setInterval(() => {
-                            this.ws.send(JSON.stringify(new packets.HeartBeat(this.lastHeartBeat)));
+                            const packet = new packets.HeartBeat(this.messageCounter);
+                            this.ws.send(JSON.stringify(packet));
                             this.on.heartbeat_sent();
                         }, this.heartbeattimer);
                         this.ws.send(JSON.stringify(new packets.GateWayOpen(this.token, this.config)));
@@ -84,13 +93,14 @@ class Client {
                 }
                 case "READY": {
                     // Gateway res
-                    this.user = message.d;
+                    this.info = message.d;
                     break;
                 }
                 case "READY_SUPPLEMENTAL": {
                     // Extra splash screen info
-                    this.user.supplemental = message.d;
+                    this.info.supplemental = message.d;
                     this.ready_status = ReadyStates.CONNECTED;
+                    this.readyStatusCallback();
                     this.on.ready();
                     break;
                 }
@@ -406,10 +416,36 @@ class Client {
                     this.on.typing_start(message.d);
                     break;
                 }
+                case "RELATIONSHIP_ADD": {
+                    this.on.relationship_add(message.d);
+                    break;
+                }
+                case "RELATIONSHIP_REMOVE": {
+                    this.on.relationship_remove(message.d);
+                    break;
+                }
             }
         });
 
-        this.ws.on("close", () => this.on.discord_disconnect());
+        this.ws.on("close", () => {
+            this.on.discord_disconnect();
+            if (this.config.autoReconnect) {
+                this.createWS();
+                this.on.discord_reconnect();
+            }
+        });
+    }
+
+    reconnect() {
+        if (this.ws.readyState !== WebSocket.OPEN) {
+            this.createWS();
+            this.on.discord_reconnect();
+        } else {
+            this.ws.close();
+            if (!this.config.autoReconnect) {
+                this.createWS();
+            }
+        }
     }
 
     /**
@@ -417,7 +453,17 @@ class Client {
      * @param {Array<any>} args
      * @private
      */
-    call_check(args) {
+    async call_check(args) {
+        if (this.ready_status === ReadyStates.CONNECTING) {
+            // Waiting for connection before preforming request...
+            await new Promise((res) => {
+                this.readyStatusCallback = () => {
+                    res();
+                    // Connected! Will continue
+                };
+            });
+            this.readyStatusCallback = function () {};
+        }
         if (this.ready_status !== ReadyStates.CONNECTED) throw new DiscordUserBotsError(`Client is in a ${ReadyStates[this.ready_status]} state`);
         for (const arg of args) {
             if (!arg) throw new DiscordUserBotsError(`Invalid parameter "${arg}"`);
@@ -440,8 +486,10 @@ class Client {
      * Closes an active connection gracefully
      */
     close() {
-        this.call_check(arguments);
+        if (this.ws.readyState !== WebSocket.OPEN) throw new DiscordUserBotsError("Cannot close a connection that isn't open");
+        this.config.autoReconnect = false;
         this.ws.close();
+        this.ws.removeAllListeners();
     }
 
     /**
@@ -449,8 +497,10 @@ class Client {
      * shutting down the connection immediately.
      */
     terminate() {
-        this.call_check(arguments);
+        if (this.ws.readyState !== WebSocket.OPEN) throw new DiscordUserBotsError("Cannot terminate a connection that isn't open");
+        this.config.autoReconnect = false;
         this.ws.terminate();
+        this.ws.removeAllListeners();
     }
 
     /**
@@ -469,18 +519,18 @@ class Client {
     /**
      * Sets the config with your wanted settings
      * (See the pre-defined config for the defaults)
-     * @param {string} api Discord API to use
-     * @param {string} wsurl Discord URL to use for the events
-     * @param {string} os OS to use
-     * @param {string} bd DB to use
-     * @param {string} language Language to use
-     * @param {number} typinginterval The typing interval used when using the type() function
+     * @param {BotConfigOpts} config Config
      */
     set_config(config = this.config) {
         this.config = {
             ...this.config,
             ...config,
         };
+        this.requester.api = this.config.api;
+        this.requester.url = this.config.url;
+        if (typeof this.config.proxy === "string") {
+            this.requester.proxy = ProxyHTTPS(this.config.proxy);
+        }
     }
 
     /**
@@ -488,14 +538,13 @@ class Client {
      * @param {string} link The url to fetch to
      * @param {FetchRequestOpts} options Options
      * @returns {Promise<Object>} The response from Discord
-     * @private
      */
     async fetch_request(link, options = FetchRequestOpts) {
         options = {
             ...FetchRequestOpts,
             ...options,
         };
-        if (typeof link !== "string") throw new DiscordUserBotsInternalError("Couldn't fetch");
+        if (typeof link !== "string") throw new DiscordUserBotsInternalError("Invalid URL");
         return this.requester.fetch_request(
             link,
             options.body,
@@ -513,14 +562,13 @@ class Client {
      * @returns {Promise<Array<Object>>}
      */
     async fetch_messages(limit, channel_id, before_message_id = false) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         if (limit > 100) throw new DiscordUserBotsError("Cannot fetch more than 100 messages at a time.");
         return await this.fetch_request(
             `channels/${channel_id}/messages?${before_message_id === false ? "" : `before=${before_message_id}&`}limit=${limit}`,
             {
                 method: "GET",
                 body: null,
-                parse: true,
             }
         );
     }
@@ -531,11 +579,10 @@ class Client {
      * @returns {Promise<Object>} The guild info
      */
     async get_guild(guild_id) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         return await this.fetch_request(`guilds/${guild_id}`, {
             method: "GET",
             body: null,
-            parse: true,
         });
     }
 
@@ -547,13 +594,11 @@ class Client {
      * @warn May disable your account
      */
     async join_guild(invite) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         invite = this.parse_invite_link(invite);
-        console.log(invite);
         return await this.fetch_request(`invites/${invite}`, {
-            body: JSON.stringify({}),
+            body: {},
             method: "POST",
-            parse: true,
         });
     }
 
@@ -563,12 +608,11 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async get_invite_info(invite) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         const code = this.parse_invite_link(invite);
         return await this.fetch_request(`invites/${code}?inputValue=https%3A%2F%2Fdiscord.gg%2F${code}&with_counts=true&with_expiration=true`, {
             method: "GET",
             body: null,
-            parse: true,
         });
     }
 
@@ -578,11 +622,10 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async leave_guild(guild_id) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         return await this.fetch_request(`users/@me/guilds/${guild_id}`, {
             method: "DELETE",
-            body: JSON.stringify({ lurking: false }),
-            parse: false,
+            body: { lurking: false },
         });
     }
 
@@ -595,7 +638,6 @@ class Client {
         return await this.fetch_request(`guilds/${guild_id}`, {
             method: "DELETE",
             body: null,
-            parse: false,
         });
     }
 
@@ -606,13 +648,12 @@ class Client {
      * @returns {Promise<object>}
      */
     async send(channel_id, data = SendMessageOpts) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         data = new constructs.SendMessage(data);
         return await this.fetch_request(`channels/${channel_id}/messages`, {
             isMultipartFormData: data.isMultipartFormData,
             body: data.content,
             method: "POST",
-            parse: true,
         });
     }
 
@@ -623,14 +664,14 @@ class Client {
      * @param {string} content The content to change to
      * @returns {Promise<object>}
      */
+
     async edit(message_id, channel_id, content) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         return await this.fetch_request(`channels/${channel_id}/messages/${message_id}`, {
-            body: JSON.stringify({
+            body: {
                 content: content,
-            }),
+            },
             method: "PATCH",
-            parse: false,
         });
     }
 
@@ -641,11 +682,10 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async delete_message(target_message_id, channel_id) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         return await this.fetch_request(`channels/${channel_id}/messages/${target_message_id}`, {
             body: null,
             method: "DELETE",
-            parse: false,
         });
     }
 
@@ -654,20 +694,18 @@ class Client {
      * @param {string} channel_id The channel ID to type in
      */
     async type(channel_id) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
 
         this.typingLoop = setInterval(async () => {
             await this.fetch_request(`channels/${channel_id}/typing`, {
                 body: null,
                 method: "POST",
-                parse: false,
             });
         }, this.config.typinginterval);
 
         return await this.fetch_request(`channels/${channel_id}/typing`, {
             body: null,
             method: "POST",
-            parse: false,
         });
     }
 
@@ -676,7 +714,7 @@ class Client {
      * @returns {boolean} Success or not
      */
     async stop_type() {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         clearInterval(this.typingLoop);
         return true;
     }
@@ -687,13 +725,12 @@ class Client {
      * @returns {Promise<Object>} The group info
      */
     async group(recipients) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         return await this.fetch_request(`users/@me/channels`, {
-            body: JSON.stringify({
+            body: {
                 recipients: recipients,
-            }),
+            },
             method: "POST",
-            parse: true,
         });
     }
 
@@ -703,11 +740,10 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async leave_group(group_id) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         return await this.fetch_request(`channels/${group_id}`, {
             body: null,
             method: "DELETE",
-            parse: false,
         });
     }
 
@@ -718,11 +754,10 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async remove_person_from_group(person_id, channel_id) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         return await this.fetch_request(`channels/${channel_id}/recipients/${person_id}`, {
             body: null,
             method: "DELETE",
-            parse: false,
         });
     }
 
@@ -733,13 +768,12 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async rename_group(name, group_id) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         return await this.fetch_request(`channels/${group_id}`, {
-            body: JSON.stringify({
+            body: {
                 name: name,
-            }),
+            },
             method: "PATCH",
-            parse: false,
         });
     }
 
@@ -750,17 +784,14 @@ class Client {
      * @param {string} icon The icon in base64 (Optional)
      */
     async create_server(name, guild_template_code = "2TffvPucqHkN", icon = null) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         return await this.fetch_request(`guilds/templates/${guild_template_code}`, {
-            body: JSON.stringify({
+            body: {
                 name: name,
                 icon: icon,
-                // channels: [],
-                // system_channel_id: null,
-                // guild_template_code: guild_template_code,
-            }),
+                guild_template_code: guild_template_code,
+            },
             method: "POST",
-            parse: true,
         });
     }
 
@@ -773,16 +804,15 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async create_thread_from_message(message_id, channel_id, name, auto_archive_duration = 1440) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         return await this.fetch_request(`channels/${channel_id}/messages/${message_id}/threads`, {
-            body: JSON.stringify({
+            body: {
                 name: name,
                 type: 11,
                 auto_archive_duration: auto_archive_duration,
                 location: "Message",
-            }),
+            },
             method: "POST",
-            parse: true,
         });
     }
 
@@ -794,16 +824,15 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async create_thread(channel_id, name, auto_archive_duration = 1440) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         return await this.fetch_request(`channels/${channel_id}/threads`, {
-            body: JSON.stringify({
+            body: {
                 name: name,
                 type: 11,
                 auto_archive_duration: auto_archive_duration,
                 location: "Thread Browser Toolbar",
-            }),
+            },
             method: "POST",
-            parse: true,
         });
     }
 
@@ -813,11 +842,10 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async delete_thread(thread_id) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         return await this.fetch_request(`channels/${thread_id}`, {
             body: null,
             method: "DELETE",
-            parse: false,
         });
     }
 
@@ -827,11 +855,10 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async join_thread(thread_id) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         return await this.fetch_request(`/channels/${thread_id}/thread-members/@me`, {
             body: null,
             method: "PUT",
-            parse: false,
         });
     }
 
@@ -843,11 +870,10 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async add_reaction(message_id, channel_id, emoji) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         return await this.fetch_request(`channels/${channel_id}/messages/${message_id}/reactions/${encodeURI(emoji)}/%40me`, {
             body: null,
             method: "PUT",
-            parse: false,
         });
     }
 
@@ -859,11 +885,10 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async remove_reaction(message_id, channel_id, emoji) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         return await this.fetch_request(`channels/${channel_id}/messages/${message_id}/reactions/${encodeURI(emoji)}/%40me`, {
             body: null,
             method: "DELETE",
-            parse: false,
         });
     }
 
@@ -873,16 +898,15 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async change_status(status) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         if (["online", "idle", "dnd", "invisible"].includes(status) === false) {
             throw new DiscordUserBotsError(`Status must be "online", "idle", "dnd", or "invisible"`);
         }
         return await this.fetch_request(`users/@me/settings`, {
-            body: JSON.stringify({
+            body: {
                 status: status,
-            }),
+            },
             method: "PATCH",
-            parse: false,
         });
     }
 
@@ -892,13 +916,12 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async set_custom_status(custom_status = CustomStatusOpts) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         return await this.fetch_request(`users/@me/settings`, {
-            body: JSON.stringify({
+            body: {
                 custom_status: new constructs.CustomStatus(custom_status).contents,
-            }),
+            },
             method: "PATCH",
-            parse: false,
         });
     }
 
@@ -909,15 +932,28 @@ class Client {
      * @returns {Promise<Object>} The response from Discord (invite code is under .code)
      */
     async create_invite(channel_id, inviteOpts = CreateInviteOpts) {
-        this.call_check(arguments);
+        await this.call_check(arguments);
         const opts = {
             createInviteOpts: CreateInviteOpts,
             ...inviteOpts,
         };
         return await this.fetch_request(`/channels/${channel_id}/invites`, {
             method: "POST",
-            body: JSON.stringify(opts),
-            parse: true,
+            body: opts,
+        });
+    }
+
+    /**
+     * Accepts a friend request
+     * @param {string} channel_id The channel
+     * @param {CreateInviteOpts} inviteOpts Invite options
+     * @returns {Promise<Object>} The response from Discord (invite code is under .code)
+     */
+    async accept_friend_request(user_id) {
+        await this.call_check(arguments);
+        return await this.fetch_request(`/users/@me/relationships/${user_id}`, {
+            method: "PUT",
+            body: {},
         });
     }
 }

@@ -7,7 +7,7 @@
  */
 
 const faker = require("@faker-js/faker");
-const fakeData = require("./util/fake.json");
+const fakeData = require("./fake.json");
 
 function random(min, max) {
     return Math.random() * (max - min) + min;

@@ -13,7 +13,6 @@
  */
 
 module.exports = {
-    AccountFactory: require("./client/factory.js"),
     Client: require("./client/client.js"),
     DiscordEvents: require("./client/events.js"),
     enums: require("./util/enums.js"),

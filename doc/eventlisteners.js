@@ -1,15 +1,3 @@
-/**
- *
- *  ## OVERVIEW
- *
- *  Specifies all the events the client can listen on.
- *
- *  ## WHEN CONTRIBUTING:
- *
- *  If the event contains data meant for the user, include it as a "message" parameter.
- *
- */
-
 class DiscordEvents {
     voice_server_update(message) {}
     user_update(message) {}
@@ -92,5 +80,3 @@ class DiscordEvents {
     interaction_premium_upsell(message) {}
     guild_application_premium_subscription(message) {}
 }
-
-module.exports = DiscordEvents;

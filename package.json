@@ -1,7 +1,7 @@
 {
   "name": "discord-user-bots",
   "version": "1.6.0",
-  "description": "A library that allows you to use the full potential of Discords API to create good user bots, and register accounts.",
+  "description": "A library that allows you to use the full potential of Discords API to create good user bots, and create accounts.",
   "main": "src/exports.js",
   "scripts": {
     "test": "node tests/functions.js"
@@ -22,11 +22,7 @@
     "bots",
     "discord.js",
     "discord user bots",
-    "api",
-    "create",
-    "register",
-    "creater",
-    "factory"
+    "api"
   ],
   "author": "Sopur",
   "license": "MIT",

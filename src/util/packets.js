@@ -41,9 +41,9 @@ class GateWayOpen {
 }
 
 class HeartBeat {
-    constructor(lastpacket) {
+    constructor(messageCounter) {
         this.op = 1;
-        this.d = lastpacket === undefined ? null : Number(lastpacket);
+        this.d = messageCounter;
     }
 }
 

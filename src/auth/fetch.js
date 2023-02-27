@@ -12,15 +12,7 @@ const ClientData = require("./data");
 const Fingerprint = require("./fingerprint");
 const UUID = require("./uuid");
 const CookieGenerator = require("./cookie");
-
-/*let https = require("https");
-https.request = new Proxy(https.request, {
-    apply(target, thisArg, args) {
-        console.log(args[0].headers);
-        if (Object.keys(args[0].headers) > 5) process.exit(1);
-        return target.apply(thisArg, args);
-    },
-});*/
+const { DiscordAPIError } = require("../util/error");
 
 class Requester {
     constructor(proxy) {
@@ -28,6 +20,7 @@ class Requester {
         this.api = "v9";
         this.defaultData = new ClientData("Windows", "Chromium", "109.0", undefined, undefined, new Fingerprint(), new UUID());
         this.cookie = "";
+        this.isRegistering = false;
         if (proxy !== undefined) {
             this.proxy = new ProxyHTTPS(proxy);
         }
@@ -60,7 +53,11 @@ class Requester {
             fetchRequest.headers["x-fingerprint"] = clientData.fingerprint.fingerprint;
         }
         if (clientData.xtrack !== undefined) {
-            fetchRequest.headers["x-track"] = clientData.xtrack;
+            if (this.isRegistering) {
+                fetchRequest.headers["x-track"] = clientData.xtrack;
+            } else {
+                fetchRequest.headers["x-super-properties"] = clientData.xtrack;
+            }
         }
         if (clientData.ua !== undefined) {
             fetchRequest.headers["user-agent"] = clientData.ua;
@@ -68,7 +65,8 @@ class Requester {
         if (clientData.authorization !== undefined) {
             fetchRequest.headers["authorization"] = clientData.authorization;
         }
-        if (method === "POST") {
+        if (method === "POST" || method === "PATCH") {
+            if (typeof body !== "object") throw new Error("Invalid body");
             fetchRequest.body = JSON.stringify(body);
         }
         if (this.proxy !== undefined) {
@@ -89,24 +87,23 @@ class Requester {
 
     async fetch_request(url, body, clientData = this.defaultData, method = "POST", extraHeaders = {}) {
         const fetchRequest = await this.build_request(body, clientData, method, extraHeaders);
-        console.log(`${this.url}/api/${this.api}/${url}`, fetchRequest);
+        // console.log(`${this.url}/api/${this.api}/${url}`, fetchRequest); // For logging fetches
         return new Promise((resolve) => {
             fetch(`${this.url}/api/${this.api}/${url}`, fetchRequest)
                 .then(async (res) => {
                     try {
                         resolve(await res.json());
                     } catch (e) {
-                        resolve({});
+                        resolve(res.status);
                     }
                 })
                 .catch((res) => {
-                    resolve({ internalError: true });
+                    resolve({ internalError: true, error: res });
                 });
         });
     }
     async fetch_noparse(url) {
         const fetchRequest = this.build_noparse();
-
         return fetch(url, fetchRequest);
     }
 }

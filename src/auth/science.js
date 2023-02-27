@@ -6,7 +6,7 @@
  *
  */
 
-const { rrandom } = require("../util");
+const { rrandom } = require("./util");
 
 class EventNode {
     constructor(clientData, type) {

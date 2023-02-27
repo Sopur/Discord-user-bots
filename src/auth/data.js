@@ -6,7 +6,7 @@
  *
  */
 
-const { genComponent, genUA } = require("../util.js");
+const { genComponent, genUA } = require("./util.js");
 const generateXTrack = require("./xtrack.js");
 const Fingerprint = require("./fingerprint.js");
 const UUID = require("./uuid.js");
