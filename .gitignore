@@ -1,5 +1,4 @@
 # Packages
 node_modules/
 package-lock.json
-test*
 spam.js
