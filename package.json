@@ -4,7 +4,8 @@
   "description": "A library that allows you to use the full potential of Discords API to create good user bots, and create accounts.",
   "main": "src/exports.js",
   "scripts": {
-    "test": "node tests/functions.js"
+    "test": "node tests/functions.js",
+    "test2": "node tests/test_update_list_members.js"
   },
   "repository": {
     "type": "git",

@@ -21,6 +21,7 @@ class DiscordEvents {
     guild_delete(message) {}
     guild_role_create(message) {}
     guild_role_update(message) {}
+    guild_member_list_update(message) {}
     guild_role_delete(message) {}
     thread_create(message) {}
     thread_join(message) {}
