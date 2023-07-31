@@ -83,6 +83,8 @@ class Requester {
         if (this.proxy !== undefined) {
             fetchRequest["agent"] = this.proxy;
         }
+
+        return fetchRequest;
     }
 
     async fetch_request(url, body, clientData = this.defaultData, method = "POST", extraHeaders = {}) {
