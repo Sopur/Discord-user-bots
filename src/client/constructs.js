@@ -143,7 +143,7 @@ class SendMessage {
         };
 
         if (this.isMultipartFormData) {
-            formData.append("payload_json", this.content);
+            formData.append("payload_json", JSON.stringify(this.content));
             this.content = formData;
         }
     }
