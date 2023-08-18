@@ -13,6 +13,7 @@ const Fingerprint = require("./fingerprint");
 const UUID = require("./uuid");
 const CookieGenerator = require("./cookie");
 const { DiscordAPIError } = require("../util/error");
+const FormData = require("form-data");
 
 class Requester {
     constructor(proxy) {
@@ -67,7 +68,8 @@ class Requester {
         }
         if (method === "POST" || method === "PATCH") {
             if (typeof body !== "object") throw new Error("Invalid body");
-            fetchRequest.body = JSON.stringify(body);
+            if (body instanceof FormData) fetchRequest.body = body;
+            else fetchRequest.body = JSON.stringify(body);
         }
         if (this.proxy !== undefined) {
             fetchRequest["agent"] = this.proxy;
