@@ -100,9 +100,7 @@ class ClientSession {
         this.unparse = s;
     }
     getRandoms() {
-        let values = new Uint8Array(16);
-        crypto.getRandomValues(values);
-        return values;
+        return new Uint8Array(crypto.randomBytes(16));
     }
 }
 

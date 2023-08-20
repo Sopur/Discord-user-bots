@@ -87,7 +87,6 @@ class Client {
     this.ws.on("message", (message) => {
       message = JSON.parse(message);
       if (message.t !== null) this.messageCounter += 1;
-      console.log(message.t);
       switch (message.t) {
         case null: {
           // gateway
