@@ -12,7 +12,7 @@ const ClientData = require("./data");
 const Fingerprint = require("./fingerprint");
 const UUID = require("./uuid");
 const CookieGenerator = require("./cookie");
-const { DiscordAPIError } = require("../util/error");
+const { DiscordUserBotsInternalError } = require("../util/error");
 const FormData = require("form-data");
 
 class Requester {
@@ -67,9 +67,9 @@ class Requester {
             fetchRequest.headers["authorization"] = clientData.authorization;
         }
         if (method === "POST" || method === "PATCH") {
-            if (typeof body !== "object") throw new Error("Invalid body");
-            if (body instanceof FormData) fetchRequest.body = body;
-            else fetchRequest.body = JSON.stringify(body);
+            if (body instanceof FormData || typeof body === "string") fetchRequest.body = body;
+            else if (typeof body === "object") fetchRequest.body = JSON.stringify(body);
+            else throw new DiscordUserBotsInternalError("Invalid body");
         }
         if (this.proxy !== undefined) {
             fetchRequest["agent"] = this.proxy;
