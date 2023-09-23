@@ -43,6 +43,7 @@ class Client {
         };
         this.token = token;
         this.messageCounter = 0;
+        this.hasConnected = false;
         this.readyStatusCallback = function () {};
         this.ready_status = ReadyStates.OFFLINE;
         this.typingLoop = function () {};
@@ -101,6 +102,8 @@ class Client {
                     this.info.supplemental = message.d;
                     this.ready_status = ReadyStates.CONNECTED;
                     this.readyStatusCallback();
+                    if (this.hasConnected) break;
+                    this.hasConnected = true;
                     this.on.ready();
                     break;
                 }
