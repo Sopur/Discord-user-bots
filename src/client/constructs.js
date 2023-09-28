@@ -149,6 +149,22 @@ class SendMessage {
     }
 }
 
+const ChannelTypes = {
+    0: "GUILD_TEXT", // a text channel within a server
+    1: "DM", // a direct message between users
+    2: "GUILD_VOICE", // a voice channel within a server
+    3: "GROUP_DM", // a direct message between multiple users
+    4: "GUILD_CATEGORY", // an organizational category that contains up to 50 channels
+    5: "GUILD_ANNOUNCEMENT", // a channel that users can follow and crosspost into their own server (formerly news channels)
+    10: "ANNOUNCEMENT_THREAD", // a temporary sub-channel within a GUILD_ANNOUNCEMENT channel
+    11: "PUBLIC_THREAD", // a temporary sub-channel within a GUILD_TEXT or GUILD_FORUM channel
+    12: "PRIVATE_THREAD", // a temporary sub-channel within a GUILD_TEXT channel that is only viewable by those invited and those with the MANAGE_THREADS permission
+    13: "GUILD_STAGE_VOICE", // a voice channel for hosting events with an audience
+    14: "GUILD_DIRECTORY", // the channel in a hub containing the listed servers
+    15: "GUILD_FORUM", // Channel that can only contain threads
+    16: "GUILD_MEDIA", // Channel that can only contain threads, similar to GUILD_FORUM channels
+};
+
 module.exports = {
     FetchRequestOpts: {
         method: "GET",
@@ -173,6 +189,7 @@ module.exports = {
     MentionsLimiterOpts,
     CustomStatusOpts,
     SendMessageOpts,
+    ChannelTypes,
     MentionsLimiter,
     CustomStatus,
     SendMessage,

@@ -73,6 +73,7 @@ class Client {
         });
         this.ws.on("message", (message) => {
             message = JSON.parse(message);
+            const data = message.d;
             if (message.t !== null) this.messageCounter += 1;
             switch (message.t) {
                 case null: {
@@ -95,6 +96,11 @@ class Client {
                 case "READY": {
                     // Gateway res
                     this.info = message.d;
+
+                    // Sort channels for channel update events
+                    for (let guild of this.info.guilds) {
+                        guild.channels = guild.channels.sort((a, b) => a.position - b.position);
+                    }
                     break;
                 }
                 case "READY_SUPPLEMENTAL": {
@@ -132,6 +138,7 @@ class Client {
                     break;
                 }
                 case "GUILD_CREATE": {
+                    this.info.guilds.push(data);
                     this.on.guild_create(message.d);
                     break;
                 }
@@ -180,10 +187,34 @@ class Client {
                     break;
                 }
                 case "CHANNEL_CREATE": {
+                    if (data.guild_id) {
+                        // If it's from a guild
+                        const guild = this.info.guilds.find((guild) => guild.id === data.guild_id); // Find guild
+                        guild.channels.push(data); // Add channel
+                        guild.channels = guild.channels.sort((a, b) => a.position - b.position); // Reposition it
+                    }
                     this.on.channel_create(message.d);
                     break;
                 }
+                case "CHANNEL_UPDATE": {
+                    if (data.guild_id) {
+                        // If it's from a guild
+                        const guild = this.info.guilds.find((guild) => guild.id === data.guild_id); // Find guild
+                        for (let channel of guild.channels) {
+                            if (channel.id !== data.id) continue;
+                            channel = data; // Edit guild
+                        }
+                        guild.channels = guild.channels.sort((a, b) => a.position - b.position); // Reposition it
+                    }
+                    this.on.channel_update(message.d);
+                    break;
+                }
                 case "CHANNEL_DELETE": {
+                    if (data.guild_id) {
+                        // If it's from a guild
+                        const guild = this.info.guilds.find((guild) => guild.id === data.guild_id); // Find guild
+                        guild.channels = guild.channels.filter((channel) => channel.id !== data.id); // Delete it
+                    }
                     this.on.channel_delete(message.d);
                     break;
                 }
