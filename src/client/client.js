@@ -986,7 +986,6 @@ class Client {
      * @param {string} user_id The user to send a friend request to
      * @returns {Promise<Object>} The response from Discord
      */
-
         async send_friend_request(user_id) {
             await this.call_check(arguments);
             return await this.fetch_request(`/users/@me/relationships`, {
