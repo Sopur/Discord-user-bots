@@ -982,6 +982,21 @@ class Client {
     }
 
     /**
+     * Send a friend request
+     * @param {string} user_id The user to send a friend request to
+     * @returns {Promise<Object>} The response from Discord
+     */
+
+        async send_friend_request(user_id) {
+            await this.call_check(arguments);
+            return await this.fetch_request(`/users/@me/relationships`, {
+                method: "POST",
+                body: {"discriminator": null, "username": user_id},
+            });
+        }
+    
+
+    /**
      * Accepts a friend request
      * @param {string} channel_id The channel
      * @param {CreateInviteOpts} inviteOpts Invite options
@@ -994,6 +1009,7 @@ class Client {
             body: {},
         });
     }
+
     /**
      * Send update list users in channel. The data will be received client.on.guild_member_list_update(message)
      * @param {string} guild_id The guild
