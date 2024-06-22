@@ -15,7 +15,7 @@ void (async function main() {
     const client = new Discord.Client();
 
     client.on("ready", async () => {
-        console.log(`Deleting all guilds with the name "Discord User Bots Test"...`);
+        console.log(`Deleting all guilds with the name ${DUBName}...`);
 
         let numGuilds = 0;
         for (const guild of client.info.guilds) {
