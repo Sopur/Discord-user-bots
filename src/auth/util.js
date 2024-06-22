@@ -41,6 +41,12 @@ function genUA() {
     return faker.faker.internet.userAgent();
 }
 
+function removeNulls(obj) {
+    for (const key in obj) {
+        if (obj[key] == null) delete obj[key];
+    }
+}
+
 async function sleep(ms) {
     return new Promise((res) => setTimeout(res, ms));
 }
@@ -53,4 +59,5 @@ module.exports = {
     genComponent,
     genUA,
     sleep,
+    removeNulls,
 };

@@ -7,483 +7,81 @@
  *
  *  ## WHEN CONTRIBUTING:
  *
- *  Make sure to call call_check at the start of each function. It covers state checking and argument checking.
+ *  Make sure to include `await this.call_check(...)` at the start of each function. It covers state checking.
  *  Use the DiscordUserBotsError class when throwing an error to the user.
- *  Use the DiscordAPIError class when throwing an error based on Discord's response.
- *  Use the DiscordUserBotsInternalError class when throwing an error because of false behavior of the Client class.
+ *  Use the DiscordAPIError class when throwing an error based on Discord's response to something.
+ *  Use the DiscordUserBotsInternalError class when throwing an error because of bad behavior of the Client class.
  *  Make sure to include a description and the parameters as comments above the function.
- *  Use the fetch_request private function when sending a fetch request to Discord.
+ *  Use the fetch_request function when sending a fetch request to Discord.
  *
  */
 
-const WebSocket = require("ws");
-const ProxyHTTPS = require("https-proxy-agent");
-const { FetchRequestOpts, SendMessageOpts, CustomStatusOpts, CreateInviteOpts, BotConfigOpts } = require("./constructs.js");
-const { DiscordUserBotsError, DiscordAPIError, DiscordUserBotsInternalError } = require("../util/error.js");
-const { ReadyStates } = require("../util/enums.js");
-const DiscordEvents = require("./events.js");
+const fs = require("fs/promises");
+const {
+    RequestGuildMembers,
+    FetchRequestOpts,
+    SendMessageOpts,
+    CustomStatusOpts,
+    CreateInviteOpts,
+    ProfileSettingsOpts,
+    BotConfigOpts,
+} = require("./constructs.js");
+const defs = require("./def.js");
+const {
+    DiscordUserBotsError,
+    DiscordAPIError,
+    DiscordUserBotsInternalError,
+} = require("../util/error.js");
+const GatewayHandler = require("./gateway.js");
 const constructs = require("./constructs.js");
-const packets = require("../util/packets.js");
-const ClientData = require("../auth/data.js");
-const Requester = require("../auth/fetch.js");
+const Captcha = require("./captcha.js");
+const BareClient = require("./bare.js");
 
-class Client {
+class Client extends BareClient {
     /**
      * DISCORD-USER-BOTS CLIENT INSTANCE
-     * @author Sopur, Discord: Sopur#3550
+     * @author Sopur, Discord: .sopur
      * @license MIT
-     * @warn WHATEVER HAPPENS TO YOUR ACCOUNT AS A RESULT OF THIS LIBRARY IS WITHIN YOUR OWN LIABILITY. THIS LIBRARY IS MADE PURELY FOR TESTS AND FUN. USE AT YOUR OWN RISK.
-     * @param {string} token Auth token for the user account you want to login to
+     * @warn WHATEVER HAPPENS TO YOUR ACCOUNT AS A RESULT OF THIS LIBRARY IS WITHIN YOUR OWN LIABILITY. THIS LIBRARY IS MADE PURELY FOR EXPERIMENTAL AND ENTERTAINMENT PURPOSES. USE AT YOUR OWN RISK.
      * @param {BotConfigOpts} config The configuration for the Client
      */
-    constructor(token, config = BotConfigOpts) {
-        if (typeof token !== "string") throw new DiscordUserBotsError("Invalid token");
-        this.config = {
-            ...BotConfigOpts,
-        };
-        this.token = token;
-        this.messageCounter = 0;
-        this.hasConnected = false;
-        this.readyStatusCallback = function () {};
-        this.ready_status = ReadyStates.OFFLINE;
-        this.typingLoop = function () {};
-        this.on = new DiscordEvents();
-        this.requester = new Requester();
-        this.clientData = new ClientData();
-        this.clientData.authorization = this.token;
-        this.set_config(config);
-        this.check_token().then(async (res) => {
-            if (res === true) {
-                await this.clientData.gen(this.requester);
-                this.createWS();
-            } else throw new DiscordAPIError(`Discord rejected token "${token}" (Not valid)`);
-        });
+    constructor(config = BotConfigOpts) {
+        super(config);
+        this.typingLoops = {};
+        this.isReady = false;
+        if (this.config.headless) {
+            this.info = {};
+            this.isReady = true;
+        } else {
+            this.gateway = new GatewayHandler(this, this.requester.proxy, this.config);
+            this.gateway.on("ready", () => {
+                this.info = this.gateway.info;
+                this.isReady = true;
+                this.emit("ready");
+            });
+            this.gateway.on("error", (e) => {
+                // throw new DiscordUserBotsError(e);
+                this.isReady = false;
+            });
+        }
     }
 
     /**
-     * Used after the token checking to set everything
-     * @private
+     * Logs in with a token (required for even for headless clients)
+     * @param {String} token Authentication token
+     * @returns {Promise<Boolean>} Is failure
      */
-    createWS() {
-        this.ready_status = ReadyStates.CONNECTING;
-
-        this.ws = new WebSocket(this.config.wsurl, {
-            origin: this.requester.url,
-            agent: this.requester.proxy,
-        });
-        this.ws.on("message", (message) => {
-            message = JSON.parse(message);
-            const data = message.d;
-            if (message.t !== null) this.messageCounter += 1;
-            switch (message.t) {
-                case null: {
-                    // gateway
-                    if (this.ready_status !== ReadyStates.CONNECTED) {
-                        if (message.d === null) throw new DiscordAPIError("Discord refused a connection.");
-                        this.heartbeattimer = message.d.heartbeat_interval;
-                        this.heartbeatinterval = setInterval(() => {
-                            const packet = new packets.HeartBeat(this.messageCounter);
-                            this.ws.send(JSON.stringify(packet));
-                            this.on.heartbeat_sent();
-                        }, this.heartbeattimer);
-                        this.ws.send(JSON.stringify(new packets.GateWayOpen(this.token, this.config)));
-                        this.on.gateway();
-                    } else {
-                        this.on.heartbeat_received();
-                    }
-                    break;
-                }
-                case "READY": {
-                    // Gateway res
-                    this.info = message.d;
-
-                    // Sort channels for channel update events
-                    for (let guild of this.info.guilds) {
-                        guild.channels = guild.channels.sort((a, b) => a.position - b.position);
-                    }
-                    break;
-                }
-                case "READY_SUPPLEMENTAL": {
-                    // Extra splash screen info
-                    this.info.supplemental = message.d;
-                    this.ready_status = ReadyStates.CONNECTED;
-                    this.readyStatusCallback();
-                    if (this.hasConnected) break;
-                    this.hasConnected = true;
-                    this.on.ready();
-                    break;
-                }
-                case "VOICE_SERVER_UPDATE": {
-                    this.on.voice_server_update(message.d);
-                    break;
-                }
-                case "USER_UPDATE": {
-                    this.on.user_update(message.d);
-                    break;
-                }
-                case "APPLICATION_COMMAND_CREATE": {
-                    this.on.application_command_create(message.d);
-                    break;
-                }
-                case "APPLICATION_COMMAND_UPDATE": {
-                    this.on.application_command_update(message.d);
-                    break;
-                }
-                case "APPLICATION_COMMAND_DELETE": {
-                    this.on.application_command_delete(message.d);
-                    break;
-                }
-                case "INTERACTION_CREATE": {
-                    this.on.interaction_create(message.d);
-                    break;
-                }
-                case "GUILD_CREATE": {
-                    this.info.guilds.push(data);
-                    this.on.guild_create(message.d);
-                    break;
-                }
-                case "GUILD_DELETE": {
-                    this.on.guild_delete(message.d);
-                    break;
-                }
-                case "GUILD_ROLE_CREATE": {
-                    this.on.guild_role_create(message.d);
-                    break;
-                }
-                case "GUILD_ROLE_UPDATE": {
-                    this.on.guild_role_update(message.d);
-                    break;
-                }
-                case "GUILD_MEMBER_LIST_UPDATE": {
-                    this.on.guild_member_list_update(message.d);
-                    break;
-                }
-                case "GUILD_ROLE_DELETE": {
-                    this.on.guild_role_delete(message.d);
-                    break;
-                }
-                case "THREAD_CREATE": {
-                    this.on.thread_join(message.d);
-                    break;
-                }
-                case "THREAD_UPDATE": {
-                    this.on.thread_update(message.d);
-                    break;
-                }
-                case "THREAD_DELETE": {
-                    this.on.thread_delete(message.d);
-                    break;
-                }
-                case "THREAD_LIST_SYNC": {
-                    this.on.thread_list_sync(message.d);
-                    break;
-                }
-                case "THREAD_MEMBER_UPDATE": {
-                    this.on.thread_member_update(message.d);
-                    break;
-                }
-                case "THREAD_MEMBERS_UPDATE": {
-                    this.on.thread_members_update(message.d);
-                    break;
-                }
-                case "CHANNEL_CREATE": {
-                    if (data.guild_id) {
-                        // If it's from a guild
-                        const guild = this.info.guilds.find((guild) => guild.id === data.guild_id); // Find guild
-                        guild.channels.push(data); // Add channel
-                        guild.channels = guild.channels.sort((a, b) => a.position - b.position); // Reposition it
-                    }
-                    this.on.channel_create(message.d);
-                    break;
-                }
-                case "CHANNEL_UPDATE": {
-                    if (data.guild_id) {
-                        // If it's from a guild
-                        const guild = this.info.guilds.find((guild) => guild.id === data.guild_id); // Find guild
-                        for (let channel of guild.channels) {
-                            if (channel.id !== data.id) continue;
-                            channel = data; // Edit guild
-                        }
-                        guild.channels = guild.channels.sort((a, b) => a.position - b.position); // Reposition it
-                    }
-                    this.on.channel_update(message.d);
-                    break;
-                }
-                case "CHANNEL_DELETE": {
-                    if (data.guild_id) {
-                        // If it's from a guild
-                        const guild = this.info.guilds.find((guild) => guild.id === data.guild_id); // Find guild
-                        guild.channels = guild.channels.filter((channel) => channel.id !== data.id); // Delete it
-                    }
-                    this.on.channel_delete(message.d);
-                    break;
-                }
-                case "CHANNEL_PINS_UPDATE": {
-                    this.on.channel_pins_update(message.d);
-                    break;
-                }
-                case "GUILD_MEMBER_ADD": {
-                    this.on.guild_member_add(message.d);
-                    break;
-                }
-                case "GUILD_MEMBER_UPDATE": {
-                    this.on.guild_member_update(message.d);
-                    break;
-                }
-                case "GUILD_MEMBER_REMOVE": {
-                    this.on.guild_member_remove(message.d);
-                    break;
-                }
-                case "GUILD_BAN_ADD": {
-                    this.on.guild_ban_add(message.d);
-                    break;
-                }
-                case "GUILD_BAN_REMOVE": {
-                    this.on.guild_ban_remove(message.d);
-                    break;
-                }
-                case "GUILD_EMOJIS_UPDATE": {
-                    this.on.guild_emojis_update(message.d);
-                    break;
-                }
-                case "GUILD_STICKERS_UPDATE": {
-                    this.on.guild_stickers_update(message.d);
-                    break;
-                }
-
-                case "GUILD_INTEGRATIONS_UPDATE": {
-                    this.on.guild_integrations_update(message.d);
-                    break;
-                }
-                case "GUILD_WEBHOOKS_UPDATE": {
-                    this.on.guild_webhooks_update(message.d);
-                    break;
-                }
-                case "INVITE_CREATE": {
-                    this.on.invite_create(message.d);
-                    break;
-                }
-                case "INVITE_DELETE": {
-                    this.on.invite_delete(message.d);
-                    break;
-                }
-                case "VOICE_STATE_UPDATE": {
-                    this.on.voice_state_update(message.d);
-                    break;
-                }
-                case "PRESENCE_UPDATE": {
-                    this.on.presence_update(message.d);
-                    break;
-                }
-                case "MESSAGE_CREATE": {
-                    switch (message.d.type) {
-                        case 1: {
-                            // RECIPIENT_ADD
-                            this.on.recipient_add(message.d);
-                            break;
-                        }
-                        case 2: {
-                            // RECIPIENT_REMOVE
-                            this.on.recipient_remove(message.d);
-                            break;
-                        }
-                        case 3: {
-                            // CALL
-                            this.on.call(message.d);
-                            break;
-                        }
-                        case 4: {
-                            // CHANNEL_NAME_CHANGE
-                            this.on.channel_name_change(message.d);
-                            break;
-                        }
-                        case 5: {
-                            // CHANNEL_ICON_CHANGE
-                            this.on.channel_icon_change(message.d);
-                            break;
-                        }
-                        case 6: {
-                            // CHANNEL_PINNED_MESSAGE
-                            this.on.channel_pinned_message(message.d);
-                            break;
-                        }
-                        case 7: {
-                            // USER_JOIN
-                            this.on.user_join(message.d);
-                            break;
-                        }
-                        case 8: {
-                            // GUILD_BOOST
-                            this.on.guild_boost(message.d);
-                            break;
-                        }
-                        case 9: {
-                            // GUILD_BOOST_TIER_1
-                            this.on.guild_boost_tier_1(message.d);
-                            break;
-                        }
-                        case 10: {
-                            // GUILD_BOOST_TIER_2
-                            this.on.guild_boost_tier_2(message.d);
-                            break;
-                        }
-                        case 11: {
-                            // GUILD_BOOST_TIER_3
-                            this.on.guild_boost_tier_3(message.d);
-                            break;
-                        }
-                        case 12: {
-                            // CHANNEL_FOLLOW_ADD
-                            this.on.channel_follow_add(message.d);
-                            break;
-                        }
-                        case 14: {
-                            // GUILD_DISCOVERY_DISQUALIFIED
-                            this.on.guild_discovery_disqualified(message.d);
-                            break;
-                        }
-                        case 15: {
-                            // GUILD_DISCOVERY_REQUALIFIED
-                            this.on.guild_discovery_requalified(message.d);
-                            break;
-                        }
-                        case 16: {
-                            // GUILD_DISCOVERY_GRACE_PERIOD_INITIAL_WARNING
-                            this.on.guild_discovery_grace_period_initial_warning(message.d);
-                            break;
-                        }
-                        case 17: {
-                            // GUILD_DISCOVERY_GRACE_PERIOD_FINAL_WARNING
-                            this.on.guild_discovery_grace_period_final_warning(message.d);
-                            break;
-                        }
-                        case 18: {
-                            // THREAD_CREATED
-                            this.on.thread_create(message.d);
-                            break;
-                        }
-                        case 19: {
-                            // REPLY
-                            this.on.reply(message.d);
-                            break;
-                        }
-                        case 20: {
-                            // CHAT_INPUT_COMMAND
-                            this.on.chat_input_command(message.d);
-                            break;
-                        }
-                        case 21: {
-                            // THREAD_STARTER_MESSAGE
-                            this.on.thread_starter_message(message.d);
-                            break;
-                        }
-                        case 22: {
-                            // GUILD_INVITE_REMINDER
-                            this.on.guild_invite_reminder(message.d);
-                            break;
-                        }
-                        case 23: {
-                            // CONTEXT_MENU_COMMAND
-                            this.on.context_menu_command(message.d);
-                            break;
-                        }
-                        case 24: {
-                            // AUTO_MODERATION_ACTION
-                            this.on.auto_moderation_action(message.d);
-                            break;
-                        }
-                        case 25: {
-                            // ROLE_SUBSCRIPTION_PURCHASE
-                            this.on.role_subscription_purchase(message.d);
-                            break;
-                        }
-                        case 26: {
-                            // INTERACTION_PREMIUM_UPSELL
-                            this.on.interaction_premium_upsell(message.d);
-                            break;
-                        }
-                        case 27: {
-                            // GUILD_APPLICATION_PREMIUM_SUBSCRIPTION
-                            this.on.guild_application_premium_subscription(message.d);
-                            break;
-                        }
-                        default: {
-                            // DEFAULT
-                            this.on.message_create(message.d);
-                        }
-                    }
-                    break;
-                }
-                case "MESSAGE_UPDATE": {
-                    if (message.d.content !== undefined) {
-                        this.on.message_edit(message.d);
-                    } else if (message.d.flags !== undefined) {
-                        if (message.d.flags === 0) {
-                            this.on.thread_delete(message.d);
-                        } else if (message.d.flags === 32) {
-                            this.on.thread_create(message.d);
-                        }
-                    }
-                    break;
-                }
-                case "MESSAGE_DELETE": {
-                    this.on.message_delete(message.d);
-                    break;
-                }
-                case "MESSAGE_DELETE_BULK": {
-                    this.on.message_delete_bulk(message.d);
-                    break;
-                }
-                case "MESSAGE_REACTION_ADD": {
-                    this.on.message_reaction_add(message.d);
-                    break;
-                }
-                case "MESSAGE_REACTION_REMOVE": {
-                    this.on.message_reaction_remove(message.d);
-                    break;
-                }
-                case "MESSAGE_REACTION_REMOVE_ALL": {
-                    this.on.message_reaction_remove_all(message.d);
-                    break;
-                }
-                case "MESSAGE_REACTION_REMOVE_EMOJI": {
-                    this.on.message_reaction_remove_emoji(message.d);
-                    break;
-                }
-                case "TYPING_START": {
-                    this.on.typing_start(message.d);
-                    break;
-                }
-                case "RELATIONSHIP_ADD": {
-                    this.on.relationship_add(message.d);
-                    break;
-                }
-                case "RELATIONSHIP_REMOVE": {
-                    this.on.relationship_remove(message.d);
-                    break;
-                }
-            }
-        });
-
-        this.ws.on("close", () => {
-            this.on.discord_disconnect();
-            if (this.config.autoReconnect) {
-                this.createWS();
-                this.on.discord_reconnect();
-            }
-        });
-    }
-
-    reconnect() {
-        if (this.ws.readyState !== WebSocket.OPEN) {
-            this.createWS();
-            this.on.discord_reconnect();
+    async login(token) {
+        if (typeof token !== "string") throw new DiscordUserBotsError("Invalid token");
+        this._set_request_token(token);
+        const res = await this.check_token();
+        if (res) {
+            await this.clientData.gen(this.requester);
+            this.gateway.connectWS();
         } else {
-            this.ws.close();
-            if (!this.config.autoReconnect) {
-                this.createWS();
-            }
+            throw new DiscordAPIError(`Discord rejected token "${token}"`);
         }
+        return !res;
     }
 
     /**
@@ -491,106 +89,57 @@ class Client {
      * @param {Array<any>} args
      * @private
      */
-    async call_check(args) {
-        if (this.ready_status === ReadyStates.CONNECTING) {
-            // Waiting for connection before preforming request...
-            await new Promise((res) => {
-                this.readyStatusCallback = () => {
-                    res();
-                    // Connected! Will continue
-                };
-            });
-            this.readyStatusCallback = function () {};
-        }
-        if (this.ready_status !== ReadyStates.CONNECTED) throw new DiscordUserBotsError(`Client is in a ${ReadyStates[this.ready_status]} state`);
-        for (const arg of args) {
-            if (!arg) throw new DiscordUserBotsError(`Invalid parameter "${arg}"`);
-        }
-    }
-
-    /**
-     * Parses a discord invite link wether it be a https link or straight code
-     * @param {string} invite Invite to parse
-     * @returns {string} Raw invite code
-     */
-    parse_invite_link(invite) {
-        if (invite.startsWith("https://discord.gg/")) invite = invite.slice("https://discord.gg/".length);
-        else if (invite.startsWith("http://discord.gg/")) invite = invite.slice("http://discord.gg/".length);
-        if (invite.endsWith("/")) invite = invite.slice(0, invite.length - 1);
-        return invite;
+    async call_check(...args) {
+        if (!this.isReady) throw new DiscordUserBotsError(`Client is not connected to Discord`);
     }
 
     /**
      * Closes an active connection gracefully
      */
     close() {
-        if (this.ws.readyState !== WebSocket.OPEN) throw new DiscordUserBotsError("Cannot close a connection that isn't open");
-        this.config.autoReconnect = false;
-        this.ws.close();
-        this.ws.removeAllListeners();
+        if (this.config.headless) return;
+        this.isReady = false;
+        this.gateway.allowReconnection = false;
+        this.gateway.disconnectWS(true);
+        this.emit("stop");
     }
 
     /**
-     * Terminates an active connection by
-     * shutting down the connection immediately.
+     * Terminates an active connection by shutting down the connection immediately
      */
     terminate() {
-        if (this.ws.readyState !== WebSocket.OPEN) throw new DiscordUserBotsError("Cannot terminate a connection that isn't open");
-        this.config.autoReconnect = false;
-        this.ws.terminate();
-        this.ws.removeAllListeners();
+        if (this.config.headless) return;
+        this.isReady = false;
+        this.gateway.allowReconnection = false;
+        this.gateway.disconnectWS(false);
+        this.emit("stop");
     }
 
     /**
-     * Checks if the token is valid
-     * @returns {Promise<boolean>}
-     * @private
+     * Tests if this account is restricted
+     * @returns {Promise<boolean>} If the account is restricted
      */
-    check_token() {
-        return new Promise((resolve) => {
-            this.requester.fetch_request(`users/@me`, undefined, this.clientData, "GET").then((res) => {
-                resolve(res.message !== "401: Unauthorized");
-            });
+    async is_restricted() {
+        const res = await this.fetch_request("users/@me/burst-credits", {
+            method: "GET",
+            body: null,
+        });
+        return res.body?.code !== undefined;
+    }
+
+    /*
+    async request_guild_members(options = RequestGuildMembers) {
+        options = { ...RequestGuildMembers, ...options };
+        await this.call_check(options);
+        return this.gateway.request_guild_members({
+            guild_id: options.guild_id,
+            query: options.query,
+            limit: options.limit,
+            presences: options.presences,
+            user_ids: options.user_ids,
         });
     }
-
-    /**
-     * Sets the config with your wanted settings
-     * (See the pre-defined config for the defaults)
-     * @param {BotConfigOpts} config Config
-     */
-    set_config(config = this.config) {
-        this.config = {
-            ...this.config,
-            ...config,
-        };
-        this.requester.api = this.config.api;
-        this.requester.url = this.config.url;
-        if (typeof this.config.proxy === "string") {
-            this.requester.proxy = ProxyHTTPS(this.config.proxy);
-        }
-    }
-
-    /**
-     * Does a client fetch request to Discord
-     * @param {string} link The url to fetch to
-     * @param {FetchRequestOpts} options Options
-     * @returns {Promise<Object>} The response from Discord
-     */
-    async fetch_request(link, options = FetchRequestOpts) {
-        options = {
-            ...FetchRequestOpts,
-            ...options,
-        };
-        if (typeof link !== "string") throw new DiscordUserBotsInternalError("Invalid URL");
-        return this.requester.fetch_request(
-            link,
-            options.body,
-            this.clientData,
-            options.method,
-            options.isMultipartFormData ? options.body.getHeaders() : {}
-        );
-    }
+    */
 
     /**
      * Fetches messages from Discord
@@ -599,11 +148,16 @@ class Client {
      * @param {string} before_message_id An offset when getting messages (Optional)
      * @returns {Promise<Array<Object>>}
      */
-    async fetch_messages(limit, channel_id, before_message_id = false) {
-        await this.call_check(arguments);
-        if (limit > 100) throw new DiscordUserBotsError("Cannot fetch more than 100 messages at a time.");
+    async fetch_messages(limit, channel_id, before_message_id) {
+        await this.call_check(limit, channel_id);
+        if (typeof limit !== "number")
+            throw new DiscordUserBotsError("The limit must be a number.");
+        if (limit > 100)
+            throw new DiscordUserBotsError("Cannot fetch more than 100 messages at a time.");
         return await this.fetch_request(
-            `channels/${channel_id}/messages?${before_message_id === false ? "" : `before=${before_message_id}&`}limit=${limit}`,
+            `channels/${channel_id}/messages?${
+                !before_message_id ? "" : `before=${before_message_id}&`
+            }limit=${limit}`,
             {
                 method: "GET",
                 body: null,
@@ -617,7 +171,7 @@ class Client {
      * @returns {Promise<Object>} The guild info
      */
     async get_guild(guild_id) {
-        await this.call_check(arguments);
+        await this.call_check(guild_id);
         return await this.fetch_request(`guilds/${guild_id}`, {
             method: "GET",
             body: null,
@@ -628,12 +182,11 @@ class Client {
      * Joins the guild the invite code is pointing to
      * @param {string} invite The Discord invite
      * @returns {Promise<Object>} The response from Discord
-     * @deprecated
-     * @warn May disable your account
+     * @warn Joining too many guilds in a short period of time will trigger Discord to send you captcha's
      */
     async join_guild(invite) {
-        await this.call_check(arguments);
-        invite = this.parse_invite_link(invite);
+        await this.call_check(invite);
+        invite = Client.parse_invite_link(invite);
         return await this.fetch_request(`invites/${invite}`, {
             body: {},
             method: "POST",
@@ -646,21 +199,24 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async get_invite_info(invite) {
-        await this.call_check(arguments);
-        const code = this.parse_invite_link(invite);
-        return await this.fetch_request(`invites/${code}?inputValue=https%3A%2F%2Fdiscord.gg%2F${code}&with_counts=true&with_expiration=true`, {
-            method: "GET",
-            body: null,
-        });
+        await this.call_check(invite);
+        const code = Client.parse_invite_link(invite);
+        return await this.fetch_request(
+            `invites/${code}?inputValue=https%3A%2F%2Fdiscord.gg%2F${code}&with_counts=true&with_expiration=true`,
+            {
+                method: "GET",
+                body: null,
+            }
+        );
     }
 
     /**
-     * Leaves a server
+     * Leaves a guild
      * @param {string} guild_id The guild ID to leave from
      * @returns {Promise<Object>} The response from Discord
      */
     async leave_guild(guild_id) {
-        await this.call_check(arguments);
+        await this.call_check(guild_id);
         return await this.fetch_request(`users/@me/guilds/${guild_id}`, {
             method: "DELETE",
             body: { lurking: false },
@@ -673,6 +229,7 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async delete_guild(guild_id) {
+        await this.call_check(guild_id);
         return await this.fetch_request(`guilds/${guild_id}`, {
             method: "DELETE",
             body: null,
@@ -686,12 +243,13 @@ class Client {
      * @returns {Promise<object>}
      */
     async send(channel_id, data = SendMessageOpts) {
-        await this.call_check(arguments);
+        await this.call_check(channel_id);
         data = new constructs.SendMessage(data);
         return await this.fetch_request(`channels/${channel_id}/messages`, {
             isMultipartFormData: data.isMultipartFormData,
             body: data.content,
             method: "POST",
+            secure: false,
         });
     }
 
@@ -704,7 +262,7 @@ class Client {
      */
 
     async edit(message_id, channel_id, content) {
-        await this.call_check(arguments);
+        await this.call_check(message_id, channel_id, content);
         return await this.fetch_request(`channels/${channel_id}/messages/${message_id}`, {
             body: {
                 content: content,
@@ -720,10 +278,24 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async delete_message(target_message_id, channel_id) {
-        await this.call_check(arguments);
+        await this.call_check(target_message_id, channel_id);
         return await this.fetch_request(`channels/${channel_id}/messages/${target_message_id}`, {
             body: null,
             method: "DELETE",
+        });
+    }
+
+    /**
+     * IF YOU WANT TO TYPE IN A CHANNEL PLEASE USE `.type` AND `.stop_type` INSTEAD
+     * Sends a typing notification to discord
+     * @param {string} channel_id ID of the channel to send a typing notification to
+     * @returns {Promise<Object>} The response from Discord
+     */
+    async send_single_type_notification(channel_id) {
+        await this.call_check(channel_id);
+        return await this.fetch_request(`channels/${channel_id}/typing`, {
+            body: null,
+            method: "POST",
         });
     }
 
@@ -732,28 +304,31 @@ class Client {
      * @param {string} channel_id The channel ID to type in
      */
     async type(channel_id) {
-        await this.call_check(arguments);
+        await this.call_check(channel_id);
+        if (this.typingLoops[channel_id])
+            throw new DiscordUserBotsError("Input channel is already sending typing notifications");
 
-        this.typingLoop = setInterval(async () => {
-            await this.fetch_request(`channels/${channel_id}/typing`, {
-                body: null,
-                method: "POST",
-            });
+        const testType = await this.send_single_type_notification(channel_id);
+
+        this.typingLoops[channel_id] = setInterval(async () => {
+            await this.send_single_type_notification(channel_id);
         }, this.config.typinginterval);
 
-        return await this.fetch_request(`channels/${channel_id}/typing`, {
-            body: null,
-            method: "POST",
-        });
+        return testType;
     }
 
     /**
      * Stops typing
+     * @param {string} channel_id The channel ID to stop typing in
      * @returns {boolean} Success or not
      */
-    async stop_type() {
-        await this.call_check(arguments);
-        clearInterval(this.typingLoop);
+    async stop_type(channel_id) {
+        await this.call_check(channel_id);
+        if (!this.typingLoops[channel_id])
+            throw new DiscordUserBotsError("Input channel isn't sending typing notifications");
+
+        clearInterval(this.typingLoops[channel_id]);
+        delete this.typingLoops[channel_id];
         return true;
     }
 
@@ -763,7 +338,9 @@ class Client {
      * @returns {Promise<Object>} The group info
      */
     async group(recipients) {
-        await this.call_check(arguments);
+        await this.call_check(recipients);
+        if (recipients.length === 0)
+            throw new DiscordUserBotsError("You must list at least one recipient");
         return await this.fetch_request(`users/@me/channels`, {
             body: {
                 recipients: recipients,
@@ -778,7 +355,7 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async leave_group(group_id) {
-        await this.call_check(arguments);
+        await this.call_check(group_id);
         return await this.fetch_request(`channels/${group_id}`, {
             body: null,
             method: "DELETE",
@@ -792,7 +369,7 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async remove_person_from_group(person_id, channel_id) {
-        await this.call_check(arguments);
+        await this.call_check(person_id, channel_id);
         return await this.fetch_request(`channels/${channel_id}/recipients/${person_id}`, {
             body: null,
             method: "DELETE",
@@ -806,7 +383,7 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async rename_group(name, group_id) {
-        await this.call_check(arguments);
+        await this.call_check(name, group_id);
         return await this.fetch_request(`channels/${group_id}`, {
             body: {
                 name: name,
@@ -822,12 +399,14 @@ class Client {
      * @param {string} icon The icon in base64 (Optional)
      */
     async create_server(name, guild_template_code = "2TffvPucqHkN", icon = null) {
-        await this.call_check(arguments);
-        return await this.fetch_request(`guilds/templates/${guild_template_code}`, {
+        await this.call_check(name);
+        return await this.fetch_request(`guilds`, {
             body: {
-                name: name,
-                icon: icon,
+                channels: [],
                 guild_template_code: guild_template_code,
+                icon: icon,
+                name: name,
+                system_channel_id: null,
             },
             method: "POST",
         });
@@ -842,11 +421,11 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async create_thread_from_message(message_id, channel_id, name, auto_archive_duration = 1440) {
-        await this.call_check(arguments);
+        await this.call_check(message_id, channel_id, name);
         return await this.fetch_request(`channels/${channel_id}/messages/${message_id}/threads`, {
             body: {
                 name: name,
-                type: 11,
+                type: defs.ChannelTypes.PUBLIC_THREAD,
                 auto_archive_duration: auto_archive_duration,
                 location: "Message",
             },
@@ -862,11 +441,11 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async create_thread(channel_id, name, auto_archive_duration = 1440) {
-        await this.call_check(arguments);
+        await this.call_check(channel_id, name);
         return await this.fetch_request(`channels/${channel_id}/threads`, {
             body: {
                 name: name,
-                type: 11,
+                type: defs.ChannelTypes.PUBLIC_THREAD,
                 auto_archive_duration: auto_archive_duration,
                 location: "Thread Browser Toolbar",
             },
@@ -880,7 +459,7 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async delete_thread(thread_id) {
-        await this.call_check(arguments);
+        await this.call_check(thread_id);
         return await this.fetch_request(`channels/${thread_id}`, {
             body: null,
             method: "DELETE",
@@ -893,8 +472,8 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async join_thread(thread_id) {
-        await this.call_check(arguments);
-        return await this.fetch_request(`/channels/${thread_id}/thread-members/@me`, {
+        await this.call_check(thread_id);
+        return await this.fetch_request(`channels/${thread_id}/thread-members/@me`, {
             body: null,
             method: "PUT",
         });
@@ -908,11 +487,14 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async add_reaction(message_id, channel_id, emoji) {
-        await this.call_check(arguments);
-        return await this.fetch_request(`channels/${channel_id}/messages/${message_id}/reactions/${encodeURI(emoji)}/%40me`, {
-            body: null,
-            method: "PUT",
-        });
+        await this.call_check(message_id, channel_id, emoji);
+        return await this.fetch_request(
+            `channels/${channel_id}/messages/${message_id}/reactions/${encodeURI(emoji)}/%40me`,
+            {
+                body: null,
+                method: "PUT",
+            }
+        );
     }
 
     /**
@@ -923,11 +505,14 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async remove_reaction(message_id, channel_id, emoji) {
-        await this.call_check(arguments);
-        return await this.fetch_request(`channels/${channel_id}/messages/${message_id}/reactions/${encodeURI(emoji)}/%40me`, {
-            body: null,
-            method: "DELETE",
-        });
+        await this.call_check(message_id, channel_id, emoji);
+        return await this.fetch_request(
+            `channels/${channel_id}/messages/${message_id}/reactions/${encodeURI(emoji)}/%40me`,
+            {
+                body: null,
+                method: "DELETE",
+            }
+        );
     }
 
     /**
@@ -936,9 +521,12 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async change_status(status) {
-        await this.call_check(arguments);
+        await this.call_check(status);
+        status = status.toLowerCase();
         if (["online", "idle", "dnd", "invisible"].includes(status) === false) {
-            throw new DiscordUserBotsError(`Status must be "online", "idle", "dnd", or "invisible"`);
+            throw new DiscordUserBotsError(
+                `Status must be "online", "idle", "dnd", or "invisible"`
+            );
         }
         return await this.fetch_request(`users/@me/settings`, {
             body: {
@@ -954,7 +542,7 @@ class Client {
      * @returns {Promise<Object>} The response from Discord
      */
     async set_custom_status(custom_status = CustomStatusOpts) {
-        await this.call_check(arguments);
+        await this.call_check();
         return await this.fetch_request(`users/@me/settings`, {
             body: {
                 custom_status: new constructs.CustomStatus(custom_status).contents,
@@ -970,14 +558,32 @@ class Client {
      * @returns {Promise<Object>} The response from Discord (invite code is under .code)
      */
     async create_invite(channel_id, inviteOpts = CreateInviteOpts) {
-        await this.call_check(arguments);
+        await this.call_check(channel_id);
         const opts = {
             createInviteOpts: CreateInviteOpts,
             ...inviteOpts,
         };
-        return await this.fetch_request(`/channels/${channel_id}/invites`, {
+        return await this.fetch_request(`channels/${channel_id}/invites`, {
             method: "POST",
             body: opts,
+        });
+    }
+
+    /**
+     * Sends a friend request to a user
+     * @param {string} username Account username
+     * @param {string|null} discriminator Account discriminator (If here is one)
+     * @returns {Promise<Object>} The response from Discord
+     * @warn Sending too many friend requests in a short period of time will trigger Discord to send you captcha's
+     */
+    async send_friend_request(username, discriminator = null) {
+        await this.call_check(channel_id);
+        return await this.fetch_request("users/@me/relationships", {
+            method: "POST",
+            body: {
+                username: username,
+                discriminator: discriminator,
+            },
         });
     }
 
@@ -988,25 +594,158 @@ class Client {
      * @returns {Promise<Object>} The response from Discord (invite code is under .code)
      */
     async accept_friend_request(user_id) {
-        await this.call_check(arguments);
-        return await this.fetch_request(`/users/@me/relationships/${user_id}`, {
+        await this.call_check(user_id);
+        return await this.fetch_request(`users/@me/relationships/${user_id}`, {
             method: "PUT",
             body: {},
         });
     }
+
     /**
-     * Send update list users in channel. The data will be received client.on.guild_member_list_update(message)
-     * @param {string} guild_id The guild
-     * @param {string} channel_id The channel
-     * @param {number} length Number of members needs to be updated
+     * Sets settings in your profile
+     * @param {ProfileSettingsOpts} profileSettings  Profile options
+     * @returns {Promise<Object>} The response from Discord
      */
-    send_update_list_members(guild_id, channel_id, length) {
-        this.ws.send(
-            JSON.stringify({
-                op: 14,
-                d: { guild_id: guild_id, channels: { [channel_id]: [[0, length]] } },
-            })
-        );
+    async set_profile(profileSettings = ProfileSettingsOpts) {
+        await this.call_check();
+        return await this.fetch_request(`users/@me/profile`, {
+            method: "PATCH",
+            body: new constructs.SetProfile(profileSettings).contents,
+        });
+    }
+
+    /**
+     * Sets your HypeSquad house
+     * @param {"Bravery" | "Brilliance" | "Balance"} house HypeSquad house
+     * @returns {Promise<Object>} The response from Discord
+     */
+    async set_HypeSquad(house) {
+        await this.call_check(house);
+        if (typeof defs.HypeSquadHouses[house] !== "number")
+            throw new DiscordUserBotsError(`House must be "Bravery", "Brilliance", or "Balance"`);
+        return await this.fetch_request(`hypesquad/online`, {
+            method: "POST",
+            body: {
+                house_id: defs.HypeSquadHouses[house],
+            },
+        });
+    }
+
+    /**
+     * Sets your profile picture (avatar)
+     * @param {string} path Path to an image containing your avatar
+     * @returns {Promise<Object>} The response from Discord
+     */
+    async set_avatar(path) {
+        await this.call_check(path);
+        const contents = await fs.readFile(path, { encoding: "base64" });
+        return await this.fetch_request(`users/@me`, {
+            method: "PATCH",
+            body: {
+                avatar: `data:image/png;base64,${contents}`,
+            },
+        });
+    }
+
+    /**
+     * Requests Discord to send a verification email to verify your Discord account by email
+     * @param {string} email Email you want to verify with
+     * @param {string} password Your Discord account password
+     * @returns {Promise<Object>} The response from Discord
+     */
+    async request_verify_email(email, password) {
+        await this.call_check(email, password);
+        return await this.fetch_request(`users/@me`, {
+            method: "PATCH",
+            body: {
+                avatar: { email: email, password: password },
+            },
+        });
+    }
+
+    /**
+     * USE `request_verify_email` BEFORE USING THIS FUNCTION TO REQUEST DISCORD TO SEND A VERIFICATION EMAIL
+     * Verifies your Discord account with the email token that was sent to your email by `request_verify_email`
+     * @param {string} token Email token sent by Discord
+     * @returns {Promise<Object>} The response from Discord
+     */
+    async verify_email(token) {
+        await this.call_check(token);
+        return await this.fetch_request(`auth/verify`, {
+            method: "POST",
+            body: {
+                token: token,
+                captcha_key: null,
+            },
+        });
+    }
+
+    /**
+     * Requests Discord to send a verification sms message to verify your Discord account by phone
+     * @param {string} phoneNumber Phone number you want to verify with (should be in format +123456789)
+     * @param {Function} captchaSolve Callback function that takes a captcha info class as a parameter, and returns a captcha token
+     * @returns {Promise<Object>} Response from Discord
+     */
+    async request_verify_phone(phoneNumber, captchaSolve) {
+        await this.call_check(arguments);
+
+        const captchaInfo = await this.fetch_request(`users/@me/phone`, {
+            body: { phone: phoneNumber, change_phone_reason: "user_settings_update" },
+            method: "POST",
+        });
+        if (captchaInfo.captcha_key !== undefined) {
+            const captchaKey = await captchaSolve(
+                new Captcha(
+                    captchaInfo.captcha_service,
+                    captchaInfo.captcha_sitekey,
+                    this.requester.url,
+                    undefined,
+                    undefined,
+                    captchaInfo.message
+                )
+            );
+            if (typeof captchaKey !== "string" || captchaKey.length < 10)
+                throw new DiscordUserBotsError(`Invalid Captcha key: "${captchaKey}"`);
+            const info = await this.fetch_request(`users/@me/phone`, {
+                body: {
+                    phone: phoneNumber,
+                    captcha_key: captchaKey,
+                    change_phone_reason: "user_settings_update",
+                },
+                method: "POST",
+            });
+            return info;
+        } else {
+            return captchaInfo;
+        }
+    }
+
+    /**
+     * USE `request_verify_phone` BEFORE USING THIS FUNCTION TO REQUEST DISCORD TO SEND A VERIFICATION TEXT
+     * Verifies your Discord account with the sms code that was sent to your phone by `request_verify_phone`
+     * @param {string} phoneNumber Phone number you want to verify with (should be in format +123456789)
+     * @param {string} code SMS code
+     * @param {string} password Your Discord account password
+     * @returns {Promise<Object>} The response from Discord
+     */
+    async verify_phone(phoneNumber, code, password) {
+        await this.call_check(arguments);
+        const tokenInfo = await this.fetch_request(`phone-verifications/verify`, {
+            method: "POST",
+            body: { phone: phoneNumber, code: code },
+        });
+        if (tokenInfo.token === undefined)
+            throw new DiscordAPIError(
+                `Discord rejected code "${code}" (${JSON.stringify(tokenInfo)})`
+            );
+        return await this.fetch_request(`users/@me/phone`, {
+            method: "POST",
+            body: {
+                phone_token: tokenInfo.token,
+                password: password,
+                change_phone_reason: "user_settings_update",
+            },
+        });
     }
 }
 

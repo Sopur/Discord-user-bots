@@ -12,9 +12,17 @@
  *
  */
 
-const FS = require("node:fs");
-const Path = require("node:path");
+const fs = require("node:fs");
+const path = require("node:path");
 const FormData = require("form-data");
+
+function removeNulls(obj) {
+    for (const key in obj) {
+        if (obj[key] === null || obj[key] === undefined) {
+            delete obj[key];
+        }
+    }
+}
 
 const MentionsLimiterOpts = {
     allowUsers: true,
@@ -62,12 +70,29 @@ class CustomStatus {
             emoji_name: options.emoji,
         };
 
-        for (const key in this.contents) {
-            if (this.contents[key] === null) {
-                delete this.contents[key];
-            }
-        }
+        removeNulls(this.contents);
         if (Object.keys(this.contents).length === 0) this.contents = null;
+    }
+}
+
+const ProfileSettingsOpts = {
+    bio: null,
+    bannerColor: null,
+    ignoreNulls: true,
+};
+class SetProfile {
+    constructor(opts = ProfileSettingsOpts) {
+        const options = {
+            ...ProfileSettingsOpts,
+            ...opts,
+        };
+        this.contents = {
+            accent_color: options.bannerColor,
+            bio: options.bio,
+        };
+        if (options.ignoreNulls) {
+            removeNulls(this.contents);
+        }
     }
 }
 
@@ -111,8 +136,12 @@ class SendMessage {
                     case "object": {
                         if (!item.path) return;
 
-                        const filename = item.name || Path.basename(item.path) || `file-${index}`;
-                        formData.append(`files[${index}]`, FS.createReadStream(item.path), filename);
+                        const filename = item.name || path.basename(item.path) || `file-${index}`;
+                        formData.append(
+                            `files[${index}]`,
+                            fs.createReadStream(item.path),
+                            filename
+                        );
                         attachments.push({
                             id: index,
                             filename,
@@ -149,26 +178,12 @@ class SendMessage {
     }
 }
 
-const ChannelTypes = {
-    0: "GUILD_TEXT", // a text channel within a server
-    1: "DM", // a direct message between users
-    2: "GUILD_VOICE", // a voice channel within a server
-    3: "GROUP_DM", // a direct message between multiple users
-    4: "GUILD_CATEGORY", // an organizational category that contains up to 50 channels
-    5: "GUILD_ANNOUNCEMENT", // a channel that users can follow and crosspost into their own server (formerly news channels)
-    10: "ANNOUNCEMENT_THREAD", // a temporary sub-channel within a GUILD_ANNOUNCEMENT channel
-    11: "PUBLIC_THREAD", // a temporary sub-channel within a GUILD_TEXT or GUILD_FORUM channel
-    12: "PRIVATE_THREAD", // a temporary sub-channel within a GUILD_TEXT channel that is only viewable by those invited and those with the MANAGE_THREADS permission
-    13: "GUILD_STAGE_VOICE", // a voice channel for hosting events with an audience
-    14: "GUILD_DIRECTORY", // the channel in a hub containing the listed servers
-    15: "GUILD_FORUM", // Channel that can only contain threads
-    16: "GUILD_MEDIA", // Channel that can only contain threads, similar to GUILD_FORUM channels
-};
-
 module.exports = {
+    InviteRegex: /(?<=\W(?:(?:https?:\/\/)?discord\.(?:gg|com)\/))[a-zA-Z-_0-9]{3,20}(?=\b)/i,
     FetchRequestOpts: {
         method: "GET",
         body: null,
+        secure: true,
     },
     CreateInviteOpts: {
         validate: null,
@@ -179,18 +194,26 @@ module.exports = {
         temporary: false,
     },
     BotConfigOpts: {
-        api: "v9",
-        wsurl: "wss://gateway.discord.gg/?encoding=json&v=9",
+        api: "9",
+        wsurl: "wss://gateway.discord.gg",
         url: "https://discord.com",
         typinginterval: 1000,
         proxy: undefined,
-        autoReconnect: true,
+        headless: false,
+    },
+    RequestGuildMembers: {
+        guild_id: null,
+        query: null,
+        limit: null,
+        presences: null,
+        user_ids: null,
     },
     MentionsLimiterOpts,
     CustomStatusOpts,
+    ProfileSettingsOpts,
     SendMessageOpts,
-    ChannelTypes,
     MentionsLimiter,
     CustomStatus,
+    SetProfile,
     SendMessage,
 };

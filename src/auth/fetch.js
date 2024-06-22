@@ -2,28 +2,39 @@
  *
  *  ## OVERVIEW
  *
- *  A central class used for making fetch requests.
+ *  A central class used for making fetch requests to Discord.
  *
  */
 
-const fetch = require("node-fetch");
-const ProxyHTTPS = require("https-proxy-agent");
-const ClientData = require("./data");
-const Fingerprint = require("./fingerprint");
-const UUID = require("./uuid");
-const CookieGenerator = require("./cookie");
-const { DiscordUserBotsInternalError } = require("../util/error");
+const ProxyHTTPS = require("https-proxy-agent").HttpsProxyAgent;
 const FormData = require("form-data");
+const ClientData = require("./data.js");
+const Fingerprint = require("./fingerprint.js");
+const UUID = require("./uuid.js");
+const CookieGenerator = require("./cookie.js");
+const Coder = require("./coder.js");
+const { DiscordUserBotsInternalError } = require("../util/error.js");
+const http = require("./http.js");
 
 class Requester {
     constructor(proxy) {
+        this.hostname = "discord.com";
+        this.port = 443;
         this.url = "https://discord.com";
-        this.api = "v9";
-        this.defaultData = new ClientData("Windows", "Chromium", "109.0", undefined, undefined, new Fingerprint(), new UUID());
+        this.api = "9";
+        this.defaultData = new ClientData(
+            "Windows",
+            "Chromium",
+            "109.0",
+            undefined,
+            undefined,
+            new Fingerprint(),
+            new UUID()
+        );
         this.cookie = "";
         this.isRegistering = false;
         if (proxy !== undefined) {
-            this.proxy = new ProxyHTTPS(proxy);
+            this.proxy = new URL(proxy);
         }
     }
     async build_request(body, clientData, method, extraHeaders) {
@@ -31,48 +42,78 @@ class Requester {
             this.cookie = await new CookieGenerator(this).compile();
         }
         let fetchRequest = {
+            method,
             headers: {
-                accept: "*/*",
-                "accept-language": "en-US,en;q=0.9",
-                "content-type": "application/json",
-                "sec-ch-ua": `"Not_A Brand";v="99", "Google Chrome";v="109", "Chromium";v="109"`,
-                "sec-ch-ua-mobile": "?0",
-                "sec-ch-ua-platform": `"Linux"`,
-                "sec-fetch-dest": "empty",
-                "sec-fetch-mode": "cors",
-                "sec-fetch-site": "same-origin",
-                cookie: this.cookie,
+                Accept: "*/*",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Accept-Language": "en-US,en;q=0.9",
+                Authorization: "",
+                "Cache-Control": "no-cache",
+                Connection: "keep-alive",
+                "Content-Type": "application/json",
+                Cookie: this.cookie,
+                Host: this.hostname,
+                Origin: this.url,
+                Pragma: "no-cache",
                 Referer: `${this.url}/`,
-                "Referrer-Policy": "strict-origin-when-cross-origin",
-                dnt: "1",
-                origin: this.url,
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "same-origin",
+                "User-Agent": "",
+                "X-Debug-Options": "bugReporterEnabled",
+                "X-Discord-Locale": "en-US",
+                "X-Fingerprint": "",
+                "X-Super-Properties": "",
+                "X-Track": "",
+                // "sec-ch-ua": "\"Chromium\";v=\"110\", \"Not A(Brand\";v=\"24\", \"Google Chrome\";v=\"110\"",
+                // "sec-ch-ua-mobile": "?0",
+                // "sec-ch-ua-platform": "\"Linux\"",
                 ...extraHeaders,
             },
-            method: method,
         };
+
+        // Fix retarded form-data lib
+        if (extraHeaders["content-type"] !== undefined) {
+            fetchRequest.headers["Content-Type"] = extraHeaders["content-type"];
+            delete fetchRequest.headers["content-type"];
+        }
+
         if (clientData?.fingerprint?.fingerprint !== undefined) {
-            fetchRequest.headers["x-fingerprint"] = clientData.fingerprint.fingerprint;
+            fetchRequest.headers["X-Fingerprint"] = clientData.fingerprint.fingerprint;
         }
         if (clientData.xtrack !== undefined) {
             if (this.isRegistering) {
-                fetchRequest.headers["x-track"] = clientData.xtrack;
+                fetchRequest.headers["X-Track"] = clientData.xtrack;
             } else {
-                fetchRequest.headers["x-super-properties"] = clientData.xtrack;
+                fetchRequest.headers["X-Super-Properties"] = clientData.xtrack;
             }
         }
         if (clientData.ua !== undefined) {
-            fetchRequest.headers["user-agent"] = clientData.ua;
+            fetchRequest.headers["User-Agent"] = clientData.ua;
         }
         if (clientData.authorization !== undefined) {
-            fetchRequest.headers["authorization"] = clientData.authorization;
+            fetchRequest.headers["Authorization"] = clientData.authorization;
         }
-        if (method === "POST" || method === "PATCH") {
-            if (body instanceof FormData || typeof body === "string") fetchRequest.body = body;
-            else if (typeof body === "object") fetchRequest.body = JSON.stringify(body);
-            else throw new DiscordUserBotsInternalError("Invalid body");
+        if (body != undefined) {
+            if (body instanceof FormData) {
+                fetchRequest.body = body;
+            } else if (typeof body === "object" || typeof body === "string") {
+                fetchRequest.body = JSON.stringify(body);
+                fetchRequest.headers["Content-Length"] = Coder.encode(
+                    fetchRequest.body
+                ).length.toString();
+            } else throw new DiscordUserBotsInternalError("Invalid body");
+        } else {
+            fetchRequest.headers["Content-Length"] = "0";
         }
-        if (this.proxy !== undefined) {
-            fetchRequest["agent"] = this.proxy;
+        for (let header of Object.keys(fetchRequest.headers)) {
+            if (fetchRequest.headers[header].length === 0) {
+                delete fetchRequest.headers[header];
+            }
+        }
+        if (this.isRegistering) {
+            delete fetchRequest.headers["X-Debug-Options"];
+            delete fetchRequest.headers["X-Discord-Locale"];
         }
         return fetchRequest;
     }
@@ -83,33 +124,40 @@ class Requester {
         };
 
         if (this.proxy !== undefined) {
-            fetchRequest["agent"] = this.proxy;
+            fetchRequest["agent"] = new ProxyHTTPS(this.proxy.href);
         }
 
         return fetchRequest;
     }
 
-    async fetch_request(url, body, clientData = this.defaultData, method = "POST", extraHeaders = {}) {
+    async fetch_request_insecure(
+        url,
+        body,
+        clientData = this.defaultData,
+        method = "POST",
+        extraHeaders = {}
+    ) {
         const fetchRequest = await this.build_request(body, clientData, method, extraHeaders);
-        // console.log(`${this.url}/api/${this.api}/${url}`, fetchRequest); // For logging fetches
-        return new Promise((resolve) => {
-            fetch(`${this.url}/api/${this.api}/${url}`, fetchRequest)
-                .then(async (res) => {
-                    try {
-                        resolve(await res.json());
-                    } catch (e) {
-                        resolve(res.status);
-                    }
-                })
-                .catch((res) => {
-                    resolve({ internalError: true, error: res });
-                });
-        });
+        return (
+            await http.insecure(`${this.url}/api/v${this.api}/${url}`, fetchRequest, this.proxy)
+        ).purify();
+    }
+    async fetch_request_secure(
+        url,
+        body,
+        clientData = this.defaultData,
+        method = "POST",
+        extraHeaders = {}
+    ) {
+        const fetchRequest = await this.build_request(body, clientData, method, extraHeaders);
+        return (
+            await http.secure(`${this.url}/api/v${this.api}/${url}`, fetchRequest, this.proxy)
+        ).purify();
     }
     async fetch_noparse(url) {
         const fetchRequest = this.build_noparse();
-        return fetch(url, fetchRequest);
+        return http.node(url, fetchRequest);
     }
 }
 
-module.exports = Requester;
+module.exports = { Requester };

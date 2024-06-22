@@ -7,7 +7,7 @@
  *
  *  ## WHEN CONTRIBUTING:
  *
- *  Make sure to give read/write functions the get/set prefix.
+ *  Assure any read/write methods uses the get/set syntax.
  *
  */
 

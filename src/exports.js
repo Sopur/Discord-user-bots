@@ -13,10 +13,12 @@
  */
 
 module.exports = {
+    AccountFactory: require("./client/factory.js"),
     Client: require("./client/client.js"),
-    DiscordEvents: require("./client/events.js"),
-    enums: require("./util/enums.js"),
-    packets: require("./util/packets.js"),
-    constructs: require("./client/constructs.js"),
+    BareClient: require("./client/bare.js"),
+    CaptchaRequester: require("./client/captcha.js").CaptchaRequester,
+    Internal: require("./auth/fetch.js"),
+    Constructs: require("./client/constructs.js"),
     version: require("../package.json").version,
+    ...require("./client/def.js"),
 };

@@ -1,120 +1,162 @@
+# Discord User Bots
+
 ![Logo](https://raw.githubusercontent.com/Sopur/Discord-user-bots/main/logo.png)
 
-# Sopur's user bot library
+<a href="https://github.com/Sopur/Discord-user-bots/blob/main/LICENSE">
+    <img alt="GitHub license" src="https://img.shields.io/github/license/Sopur/Discord-user-bots">
+</a>
+<a href="https://github.com/Sopur/Discord-user-bots/stargazers">
+    <img alt="GitHub stars" src="https://img.shields.io/github/stars/Sopur/Discord-user-bots">
+</a>
+<a href="https://discord.gg/57XkDazjFP">
+    <img alt="Discord" src="https://img.shields.io/discord/1252707954356912354?label=Discord%20Chat">
+</a>
+<a href="https://github.com/Sopur/Discord-user-bots/issues">
+    <img alt="Open issues" src="https://shields.io/github/issues/Sopur/Discord-user-bots">
+</a>
 
-    Hello! This is a user bot library that allows for complete control over user accounts.
-    Some examples of extreme examples are the ability to access user notes, friend counts, and the default Discord tutorial.
-    This library is still being worked on more functions will be added soon.
+| Useful links
+|-
+| [DUB Discord Server](https://discord.gg/57XkDazjFP)
+| [DUB NPM Package](https://www.npmjs.com/package/discord-user-bots)
+| [DUB Client Documentation](https://github.com/Sopur/Discord-user-bots/blob/main/doc/client.js)
+| [DUB Examples](https://github.com/Sopur/Discord-user-bots/tree/main/examples)
 
 # Installing
 
-    npm i discord-user-bots
+```sh
+npm i discord-user-bots
+```
+
+# What is this library?
+
+### Discord-User-Bots is a library that allows for complete access & control over user accounts
+
+This library supports account features that are exclusive to user accounts or hidden by the Discord documentation. Data-mining Discord was used to find the vulnerabilities and hidden endpoints that allow this library to function.
+
+# What can this do?
+
+### Some use-cases for this library are:
+
+-   Creating accounts (EXPERIMENTAL)
+-   Sending unrestricted friend requests to other users
+-   Joining guilds without triggering Discord's trust system
+-   Email and phone verifying accounts
+-   Accessing user notes, friend counts, interacting with the default Discord tutorial, and every other property associated with a Discord account
+-   Remotely controlling accounts without authenticating with Discord for distributed account control
+-   Common functions real accounts use
+-   And many more...
 
 # Getting started
 
 ## Controlling an account
 
-For comments: **https://github.com/Sopur/Discord-user-bots/blob/main/examples/basic.js**
+> For comments: **https://github.com/Sopur/Discord-user-bots/blob/main/examples/basic.js**
 
 ```js
 // For comments and more detail: https://github.com/Sopur/Discord-user-bots/blob/main/examples/basic.js
 const Discord = require("discord-user-bots");
-const client = new Discord.Client("Token goes here.");
+const client = new Discord.Client();
 
-client.on.ready = function () {
+client.on("ready", () => {
     console.log("Client online!");
-};
-
-client.on.message_create = function (message) {
+});
+client.on("message", (message) => {
     console.log(message);
-};
+});
+
+client.login("token goes here.");
+```
+
+## Controlling an account without logging in
+
+> For comments: **https://github.com/Sopur/Discord-user-bots/blob/main/examples/basic-headless.js**
+
+```js
+// For comments and more detail: https://github.com/Sopur/Discord-user-bots/blob/main/examples/basic-headless.js
+const Discord = require("discord-user-bots");
+const client = new Discord.Client({
+    headless: true,
+    proxy: "http://xxx.xxx.xxx.xxx:xxxx",
+});
+client.login("Token goes here."); // (Doesn't follow the full login process)
+
+client.send("1234567890", {
+    content: "This message was sent without logging in",
+});
 ```
 
 # Practical examples
+
+> See all examples: https://github.com/Sopur/Discord-user-bots/tree/main/examples
 
 ## Message logger
 
 Logs all messages sent in all the servers the client is in. <br>
 **https://github.com/Sopur/Discord-user-bots/blob/main/examples/log.js**
 
-## Mailing list
+## Create an account (EXPERIMENTAL)
 
-Pings other users when a victim of your choice sends a message. <br>
-**https://github.com/Sopur/Discord-user-bots/blob/main/examples/mailinglist.js**
+Creates an account using the captcha.guru captcha solver. <br>
+**https://github.com/Sopur/Discord-user-bots/blob/main/examples/chat-bot.js**
 
 ## Un-sendable channel
 
 Deletes every message that is sent on channels of your choice while avoiding message delete rate limits. <br>
 **https://github.com/Sopur/Discord-user-bots/blob/main/examples/unsendable-channel.js**
 
-## Delete all incriminating messages
+## ChatGPT chat-bot
 
-Deletes all incriminating messages in a channel automatically. <br>
-**https://github.com/Sopur/Discord-user-bots/blob/main/examples/clean-up.js.js**
-
-## GPT-3 chatbot
-
-Uses OpenAI's GPT-3 model as a chat bot. <br>
+Uses OpenAI's ChatGPT as a chat bot. <br>
 **https://github.com/Sopur/Discord-user-bots/blob/main/examples/chat-bot.js**
 
 # Documentation
 
 ## Discord.Client
 
-### Functions
+### Methods
 
-    This library contains most functions required to do anything a normal client can do. See the client.js file in the doc/ folder for documentation on every function.
+> **https://github.com/Sopur/Discord-user-bots/blob/main/doc/client.js**
 
-**https://github.com/Sopur/Discord-user-bots/blob/main/doc/client.js**
+This library contains most functions required to do anything a normal client can do. See the `client.js` file in the `doc/` folder for documentation on every `Discord.Client` method.
 
 ### Event listeners
 
-    This library has every known event listener. See the eventlisteners.js file in the doc/ folder for documentation on every event.
+> **https://github.com/Sopur/Discord-user-bots/blob/main/doc/eventlisteners.js**
 
-**https://github.com/Sopur/Discord-user-bots/blob/main/doc/eventlisteners.js**
+This library has every known event listener. See the `eventlisteners.js` file in the `doc/` folder to see every one.
 
-### Properties
+# What's new in 2.0.0
 
-    This library focuses on allowing you to access absolutely everything a normal Discord client can. See the properties.js file in the doc/ folder for documentation on every event.
+## General
 
-**https://github.com/Sopur/Discord-user-bots/blob/main/doc/properties.js**
+1. Added the ability to create accounts
+1. Pretty much made DUB undetectable and 100% anonymous
+1. Added headless clients (accounts that don't login or interact with Discord's gateway)
+1. Added enum properties for every Discord enum
+1. No methods restrict your account anymore
+1. Added support for EVERY event (even undocumented ones)
+1. Added more methods to the testing script
 
-# What's new in 1.6.0
+## Methods
 
--   Added accept_friend_request function (Thanks lf94)
--   Added relationship_add event listener (Thanks lf94)
--   Added relationship_remove event listener (Thanks lf94)
--   Added proxy option to client class
--   Added reconnect event listener
--   Added reconnect function
--   Added autoReconnect option to config
--   Added examples create-account.js, clean-up.js, chat-bot.js, and log.js
--   Added science/experiment tracking logic
--   Added cookie logic
--   Added uuid logic
--   Added xtrack logic
--   Fixed disconnection problem (Thanks lf94)
--   Fixed group function
--   Fixed examples
--   Fixed README
+1. `.login` just like Discord.js
+1. `.is_restricted`
+1. Fixed `.join_guild`
+1. `.send_single_type_notification`
+1. Fixed `.type` to support multiple channels
+1. `send_friend_request`
+1. `.set_profile`
+1. `.set_avatar`
+1. `.request_verify_email` & `.verify_email`
+1. `.request_verify_phone` & `.verify_phone`
 
-# Special Thanks To
+# Want something?
 
-## Github user Luthfi GearIntellix
+> Contact me on Discord at `.sopur` or Telegram at `@soopur`
 
--   Added attachments to the send function
--   Added the remove_reaction function
+You may also find something of interest on the [DUB Discord Server](https://discord.gg/57XkDazjFP).
 
-## Github user Imraj
+# DISCLAIMER
 
--   Added close function
--   Added terminate function
-
-## Github user lf94
-
--   Added accept_friend_request function
--   Fixed heartbeat bug
-
-# WARN
-
-WHATEVER HAPPENS TO YOUR ACCOUNT AS A RESULT OF THIS LIBRARY IS WITHIN YOUR OWN LIABILITY. THIS LIBRARY IS MADE PURELY FOR TESTS AND FUN. USE AT YOUR OWN RISK.
+WHATEVER HAPPENS TO YOUR ACCOUNT AS A RESULT OF THIS LIBRARY IS WITHIN YOUR OWN LIABILITY. THIS LIBRARY IS MADE PURELY FOR EXPERIMENTAL AND ENTERTAINMENT PURPOSES. USE AT YOUR OWN RISK.

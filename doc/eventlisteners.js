@@ -1,4 +1,5 @@
 class DiscordEvents {
+    // Official
     voice_server_update(message) {}
     user_update(message) {}
     application_command_create(message) {}
@@ -34,7 +35,6 @@ class DiscordEvents {
     invite_delete(message) {}
     voice_state_update(message) {}
     presence_update(message) {}
-    message_create(message) {}
     message_update(message) {}
     message_delete(message) {}
     message_delete_bulk(message) {}
@@ -46,14 +46,15 @@ class DiscordEvents {
     relationship_add(message) {}
     relationship_remove(message) {}
 
-    // Custom made ones
+    // Unofficial
     discord_disconnect() {}
     discord_reconnect() {}
     gateway() {}
     heartbeat_sent() {}
     heartbeat_received() {}
     ready() {}
-    message_edit(message) {}
+    message(message) {}
+    default(message) {}
     recipient_add(message) {}
     recipient_remove(message) {}
     call(message) {}
@@ -70,6 +71,7 @@ class DiscordEvents {
     guild_discovery_requalified(message) {}
     guild_discovery_grace_period_initial_warning(message) {}
     guild_discovery_grace_period_final_warning(message) {}
+    thread_created(message) {}
     reply(message) {}
     chat_input_command(message) {}
     thread_starter_message(message) {}
@@ -78,5 +80,9 @@ class DiscordEvents {
     auto_moderation_action(message) {}
     role_subscription_purchase(message) {}
     interaction_premium_upsell(message) {}
+    stage_start(message) {}
+    stage_end(message) {}
+    stage_speaker(message) {}
+    stage_topic(message) {}
     guild_application_premium_subscription(message) {}
 }

@@ -4,28 +4,26 @@
  *
  *  Contains all the error classes to be thrown in any of the source files.
  *
- *  ## WHEN CONTRIBUTING:
- *
- *  Make sure each class extends the error class.
- *  Each class has a "<name> : ${message}" prefix.
- *
  */
 
 class DiscordUserBotsError extends Error {
     constructor(message) {
-        super(`Discord User Bots: ${message}`);
+        super(message);
+        this.name = "Discord User Bots Error";
     }
 }
 
 class DiscordAPIError extends Error {
     constructor(message) {
-        super(`Discord API Error: ${message}`);
+        super(message);
+        this.name = "Discord API Error";
     }
 }
 
 class DiscordUserBotsInternalError extends DiscordUserBotsError {
     constructor(message) {
-        super(`(Internal Error): ${message}`);
+        super(message);
+        this.name = "Discord User Bots Internal Error";
     }
 }
 

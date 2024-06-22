@@ -1,10 +1,11 @@
-const Discord = require("discord-user-bots");
-const client = new Discord.Client("Token goes here."); // Login with the token given
+const Discord = require("../src/exports.js");
+const client = new Discord.Client();
 
-client.on.ready = function() { // Executes this function when the client is ready
-    console.log("Client online!"); // Logs "Client online!"
-};
+client.on("ready", () => {
+    console.log("Client online!"); // Logs "Client online!" when connected to Discord
+});
+client.on("message", (message) => {
+    console.log(message); // Logs the message data
+});
 
-client.on.message_create = function(message) { // Executes this function when the client receives a message
-    console.log(message); // Logs the message
-};
+client.login("token goes here."); // Login with the token given

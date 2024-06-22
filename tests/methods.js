@@ -1,7 +1,11 @@
-const interface = require("readline/promises").createInterface({ input: process.stdin, output: process.stdout });
+const Discord = require("../src/exports.js");
+const interface = require("readline/promises").createInterface({
+    input: process.stdin,
+    output: process.stdout,
+});
 
 async function sleep(ms) {
-    return new Promise(async (res) => setTimeout(res, ms));
+    return new Promise((res) => setTimeout(res, ms));
 }
 
 async function test(thing) {
@@ -10,17 +14,16 @@ async function test(thing) {
 }
 
 void (async function main() {
-    const Discord = require("../src/exports.js");
-    const token = await interface.question("Token: ");
-    const client = new Discord.Client(token);
+    await sleep(2000);
+    const client = new Discord.Client();
 
-    client.on.ready = async function () {
+    client.on("ready", async () => {
         console.log("Starting...");
         await client.create_server("Discord-user-bots Test");
-    };
+    });
 
-    client.on.guild_create = async function (guild_object) {
-        const channel = guild_object.channels[1].id; // General
+    client.on("guild_create", async (guild_object) => {
+        const channel = guild_object.channels[2].id; // General
         const guild = guild_object.id;
         console.log(channel, guild);
 
@@ -28,6 +31,7 @@ void (async function main() {
         const firstMessage = (
             await client.send(channel, {
                 content: "Hello from discord-user-bots!",
+                attachments: ["logo.png"],
             })
         ).id;
 
@@ -57,16 +61,18 @@ void (async function main() {
         await client.type(channel);
 
         await test("stop_type");
-        client.stop_type();
+        client.stop_type(channel);
 
         await test("group");
-        const group = (await client.group([client.info.user.id, "869140419613708289"])).id;
+        const group = (
+            await client.group([client.info.user.id, "852605214636638260", "765239557666111509"])
+        ).id;
 
         await test("rename_group");
-        await client.rename_group("Renamed", group);
+        await client.rename_group("Discord User Bots!", group);
 
         await test("remove_person_from_group");
-        await client.remove_person_from_group("869140419613708289", group);
+        await client.remove_person_from_group("852605214636638260", group);
 
         await test("leave_group");
         await client.leave_group(group);
@@ -96,6 +102,15 @@ void (async function main() {
             expireAt: null,
         });
 
+        await test("set_profile");
+        await client.set_profile({
+            bio: "DUB was here!",
+            bannerColor: 44799,
+        });
+
+        await test("set_avatar");
+        client.set_avatar("logo.png");
+
         await test("create_invite");
         const invite = (await client.create_invite(channel)).code;
         console.log(invite);
@@ -104,16 +119,22 @@ void (async function main() {
         console.log(await client.get_invite_info(invite));
 
         await test("parse_invite_link");
-        console.log(client.parse_invite_link("https://discord.gg/WADasB31") === "WADasB31");
-        console.log(client.parse_invite_link("http://discord.gg/WADasB31") === "WADasB31");
-        console.log(client.parse_invite_link("https://discord.gg/WADasB31/") === "WADasB31");
-        console.log(client.parse_invite_link("http://discord.gg/WADasB31/") === "WADasB31");
-        console.log(client.parse_invite_link("WADasB31") === "WADasB31");
-        console.log(client.parse_invite_link("WADasB31/") === "WADasB31");
+        const parse = Discord.Client.parse_invite_link;
+        console.log(parse("https://discord.gg/WADasB31") === "WADasB31");
+        console.log(parse("http://discord.gg/WADasB31") === "WADasB31");
+        console.log(parse("https://discord.com/WADasB31/") === "WADasB31");
+        console.log(parse("http://discord.gg/WADasB31/") === "WADasB31");
+        console.log(parse("WADasB31") === "WADasB31");
+        console.log(parse("WADasB31/") === "WADasB31");
 
         await test("delete_guild");
         await client.delete_guild(guild);
-        console.log("Done.");
-        process.exit(0);
-    };
+
+        console.log("Testing finished!");
+        client.terminate();
+        interface.close();
+    });
+
+    const token = await interface.question("Token: ");
+    client.login(token);
 })();

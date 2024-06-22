@@ -1,55 +1,62 @@
-const Discord = require("./src/exports.js");
-const OpenAI = require("openai-api"); // `npm i openai-api` to install
-const openai = new OpenAI("OpenAI token goes here.");
-const client = new Discord.Client("Discord token goes here.");
+const Discord = require("../src/exports.js");
+const OpenAI = require("openai"); // `npm i openai` to install
+const client = new Discord.Client();
+const openai = new OpenAI({
+    apiKey: "OpenAI token goes here.",
+});
 
 // Config
-const channelID = "channel_id"; // Channel to chat in
-const limit = 20; // Message memory limit
-const headerText = "Below is a conversation between an AI chatbot and multiple online users.\n"; // Header that describes the conversation to GPT-3
-const engine = "davinci"; // Engine to use
-const maxTokens = 20; // Max tokens GPT-3 will use to respond with
+const config = {
+    channel: "channel_id", // Channel to chat in
+    memory_limit: 20, // ChatGPT's message memory limit
+    model: "gpt-3.5-turbo", // Engine to use
+    max_tokens: 200, // Max tokens ChatGPT will use to respond with
+    system_text: "You are a chat-bot on the social media platform Discord.",
+};
 
 // Memory of messages
-let narrative = "";
+let memory = [];
 
-client.on.ready = async function () {
+client.on("ready", () => {
     console.log(`${engine} chatbot is online!`);
-};
+});
 
 client.on.message_create = async function (message) {
     if (message.channel_id != channelID) return;
 
     if (message.author.id == client.info.user.id) {
-        // If the message is by the bot, add it to the narrative
-        narrative += `AI: ${message.content}\n`;
+        // If the message is by the bot, add it to memory
+        memory.push({
+            role: "assistant",
+            content: `@Chat bot: ${message.content}`,
+        });
     } else {
-        // If the message is by a user, add it to the narrative and provoke a response
-        narrative += `${message.author.username}: ${message.content}\n`;
-        const gptResponse = await openai.complete({
-            engine: engine,
-            prompt: headerText + narrative + "AI: ",
-            maxTokens: maxTokens,
-            temperature: 0.9,
-            topP: 1,
-            presencePenalty: 0,
-            frequencyPenalty: 0,
-            bestOf: 1,
-            n: 1,
-            stream: false,
-            stop: ["\n"],
+        // If the message is by a user, add it to memory and provoke a response
+        if (memory.length == config.memory_limit) memory.shift();
+        memory.push({
+            role: "user",
+            content: `@${message.author.username}: ${message.content}`,
+        });
+
+        const gptResponse = await openai.chat.completions.create({
+            model: config.model,
+            messages: [
+                {
+                    role: "system",
+                    content: config.system_text,
+                },
+                ...memory,
+            ],
+            temperature: 0.7,
+            max_tokens: config.max_tokens,
+            top_p: 1,
+            frequency_penalty: 0,
+            presence_penalty: 0,
         });
 
         // Send response
-        client.send(channelID, { content: gptResponse.data.choices[0].text });
-    }
-    // Take a look at the narrative!
-    console.log(narrative);
-
-    // Make sure that there isn't more messages than the limit
-    if (narrative.split("\n").length > limit) {
-        let newNarrative = narrative.split("\n");
-        console.log(`reducing, removing ${newNarrative.shift()}`);
-        narrative = newNarrative.join("\n");
+        client.send(config.channel, { content: gptResponse.data.choices[0].text });
     }
 };
+
+client.login("Token goes here.");

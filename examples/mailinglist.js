@@ -1,44 +1,52 @@
 const Discord = require("../src/exports.js");
-const client = new Discord.Client("Token goes here.");
+const client = new Discord.Client();
 
 // Config
-const banned = ["`", "https", "@", "\n"]; // Do not repeat these
-const mailingList = [""]; // IDs of people to ping for the mailing list
-const welcomeChannel = ""; // ID of the channel to welcome the people subscribed to the mailing list
-const victim = ""; // Victim ID
-const victimName = "Add name!"; // Name of the victim
-const errorMessage = "message could not be gathered"; // Message to send if there was an error
-const messageCharacterLimit = 100; // The character limit for a message made by the victim to avoid spam
+const config = {
+    banned: ["`", "https", "@", "\n"], // Do not repeat these
+    mailing_list: [""], // IDs of people to ping for the mailing list
+    welcome_channel: "", // ID of the channel to welcome the people subscribed to the mailing list
+    victim: "", // Victim ID
+    victim_name: "Add their name!", // Name of the victim
+    error_message: "message could not be gathered", // Message to send if there was an error
+    message_character_limit: 100, // The character limit for a message made by the victim to avoid spam
+};
 
-let rateLimited = true;
+let isRateLimited = true;
 function rateLimit() {
-    rateLimited = false;
+    isRateLimited = false;
     setTimeout(() => {
-        rateLimited = true;
+        isRateLimited = true;
     }, 3000);
 }
+
 function sendMailingList(message, channel) {
-    mailingList.forEach((id) => {
-        client.send(channel || welcomeChannel, {
-            content: `<@!${id || 0}> ${message || errorMessage}`,
+    config.mailing_list.forEach((id) => {
+        client.send(channel || config.welcome_channel, {
+            content: `<@!${id || 0}> ${message || config.error_message}`,
         });
     });
 }
 
-client.on.ready = function () {
+client.on("ready", () => {
     console.log("Mailing list online!");
-    sendMailingList(`Welcome to the __${victimName}__ **Mailing list**!`);
-};
+    sendMailingList(`Welcome to the __${config.victim_name}__ **Mailing list**!`);
+});
 
-client.on.message_create = function (message) {
+client.on("message_create", (message) => {
     if (
-        rateLimited === true && // Avoid Discord rate limits and spam by checking a custom rate limit
-        message.author.id === victim && // Make sure the author is the victim
-        message.content.length < messageCharacterLimit && // Avoid huge message spam
-        banned.some((string) => message.content.includes(string)) === false && // Make sure it isn't something we don't want sent
+        isRateLimited === true && // Avoid Discord rate limits and spam by checking a custom rate limit
+        message.author.id === config.victim && // Make sure the author is the victim
+        message.content.length < config.message_character_limit && // Avoid huge message spam
+        config.banned.some((string) => message.content.includes(string)) === false && // Make sure it isn't something we don't want sent
         !!message.content // Make sure the content isn't empty or undefined
     ) {
         rateLimit(); // Avoid spamming
-        sendMailingList(`Wakey wakey! ${victimName} said something! "${message.content}"`, message.channel_id);
+        sendMailingList(
+            `Wakey wakey! ${config.victim_name} said something! "${message.content}"`,
+            message.channel_id
+        );
     }
-};
+});
+
+client.login("Token goes here.");

@@ -14,7 +14,12 @@ class Fingerprint {
     }
 
     async request() {
-        const info = await this.requester.fetch_request("experiments", undefined, undefined, "GET");
+        const info = await this.requester.fetch_request_insecure(
+            "experiments",
+            undefined,
+            undefined,
+            "GET"
+        );
         this.fingerprint = info.fingerprint;
         return this.fingerprint;
     }
