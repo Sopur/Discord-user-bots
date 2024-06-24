@@ -79,7 +79,7 @@ const client = new Discord.Client({
     headless: true,
     proxy: "http://xxx.xxx.xxx.xxx:xxxx",
 });
-client.login("Token goes here."); // ONLY fills in the token (doesn't follow the full login process)
+client.login("Token goes here."); // ONLY sets the token (doesn't follow the full login process)
 
 client.send("1234567890", {
     content: "This message was sent without logging in",
