@@ -77,7 +77,7 @@ class Client extends BareClient {
         const res = await this.check_token();
         if (res) {
             await this.clientData.gen(this.requester);
-            this.gateway.connectWS();
+            if (!this.config.headless) this.gateway.connectWS();
         } else {
             throw new DiscordAPIError(`Discord rejected token "${token}"`);
         }
