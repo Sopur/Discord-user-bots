@@ -1,5 +1,5 @@
-const Discord = require("../src/exports.js");
-const client = new Discord.Client(); // Login with the token given
+const Discord = require("discord-user-bots");
+const client = new Discord.Client();
 
 // Harmful words to delete
 const config = {

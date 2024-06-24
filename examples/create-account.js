@@ -1,4 +1,4 @@
-const Discord = require("../src/exports.js");
+const Discord = require("discord-user-bots");
 
 // captcha.guru is a captcha solving service.
 // This is a wrapper I made for it.

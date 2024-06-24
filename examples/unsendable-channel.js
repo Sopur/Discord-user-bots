@@ -1,4 +1,4 @@
-const Discord = require("../src/exports.js");
+const Discord = require("discord-user-bots");
 const client = new Discord.Client(); // Token to log into
 
 // Config

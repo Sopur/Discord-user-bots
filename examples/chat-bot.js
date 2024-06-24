@@ -1,4 +1,4 @@
-const Discord = require("../src/exports.js");
+const Discord = require("discord-user-bots");
 const OpenAI = require("openai"); // `npm i openai` to install
 const client = new Discord.Client();
 const openai = new OpenAI({

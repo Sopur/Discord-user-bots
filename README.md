@@ -70,7 +70,7 @@ client.login("token goes here.");
 
 ## Controlling an account without logging in
 
-> For comments: **https://github.com/Sopur/Discord-user-bots/blob/main/examples/basic-headless.js**
+> For comments: **https://github.com/Sopur/Discord-user-bots/blob/main/examples/basic-headless.js** > _WARNING: if there isn't another live instance of the account running while you make a request with a headless client, the account with be disabled and flagged._
 
 ```js
 // For comments and more detail: https://github.com/Sopur/Discord-user-bots/blob/main/examples/basic-headless.js
@@ -79,7 +79,7 @@ const client = new Discord.Client({
     headless: true,
     proxy: "http://xxx.xxx.xxx.xxx:xxxx",
 });
-client.login("Token goes here."); // (Doesn't follow the full login process)
+client.login("Token goes here."); // ONLY fills in the token (doesn't follow the full login process)
 
 client.send("1234567890", {
     content: "This message was sent without logging in",
