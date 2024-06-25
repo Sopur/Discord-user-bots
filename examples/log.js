@@ -18,7 +18,7 @@ client.on("message", (message) => {
 
     // Log everything
     console.log(
-        `(${minutesPassed}m) [${guild.name}] [#${channel.name}] ${message.author.username}: ${message.content}`
+        `(${minutesPassed}m) [${guild.properties.name}] [#${channel.name}] ${message.author.username}: ${message.content}`
     );
 });
 

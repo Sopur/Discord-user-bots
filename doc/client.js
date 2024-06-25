@@ -37,8 +37,7 @@ client.get_guild(
     "794326789480120374" // The guild ID to fetch
 );
 
-// (deprecated)
-// WARN: May disable your account
+// WARN: May disable your account if used too often
 // Joins the guild the invite code is pointing to
 client.join_guild(
     "https://discord.gg/57XkDazjFP" // The Discord invite
@@ -219,6 +218,7 @@ client.create_invite(
     }
 );
 
+// WARN: May disable your account if used too often
 // Sends a friend request
 client.send_friend_request(
     ".sopur" // Account username
