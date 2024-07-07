@@ -16,7 +16,7 @@ class AccountFactory {
     constructor() {}
 
     async requestCaptchaInfo(requester, clientData, username) {
-        const info = await requester.fetch_request(
+        const info = await requester.fetch_request_secure(
             "auth/register",
             {
                 consent: true,
@@ -76,7 +76,7 @@ class AccountFactory {
         // console.log("[CAPTCHA] Done solving");
 
         // Attempt to create an account
-        const info = await requester.fetch_request(
+        const info = await requester.fetch_request_secure(
             "auth/register",
             {
                 consent: true,

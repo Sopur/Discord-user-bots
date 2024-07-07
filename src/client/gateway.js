@@ -107,7 +107,7 @@ class GatewayHandler extends Events {
         });
     }
 
-    updateVoiceStatus() {
+    update_voice_status() {
         this.ws_request(def.GatewayOpcodes.Voice_State_Update, {
             guild_id: null,
             channel_id: null,
@@ -118,7 +118,7 @@ class GatewayHandler extends Events {
         });
     }
 
-    focusDM(channel_id) {
+    DM_focus(channel_id) {
         this.ws_request(def.GatewayOpcodes.DM_Focus, {
             channel_id: channel_id,
         });
@@ -227,7 +227,7 @@ class GatewayHandler extends Events {
 
                     if (isResume) this.resume();
                     else this.identify();
-                    this.updateVoiceStatus();
+                    this.update_voice_status();
                     break;
                 }
                 case def.GatewayOpcodes.Heartbeat_ACK: {
