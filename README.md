@@ -70,7 +70,7 @@ client.login("token goes here.");
 
 ## Controlling an account without logging in
 
-> For comments: **https://github.com/Sopur/Discord-user-bots/blob/main/examples/basic-headless.js** > _WARNING: if there isn't another live instance of the account running while you make a request with a headless client, the account with be disabled and flagged._
+> For comments: **https://github.com/Sopur/Discord-user-bots/blob/main/examples/basic-headless.js** > _WARNING: if there isn't another live instance of the account running while you make a request with a headless client, the account will be disabled and flagged._
 
 ```js
 // For comments and more detail: https://github.com/Sopur/Discord-user-bots/blob/main/examples/basic-headless.js
