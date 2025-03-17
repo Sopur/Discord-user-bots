@@ -1,6 +1,6 @@
 {
     "name": "discord-user-bots",
-    "version": "2.0.2",
+    "version": "2.0.3",
     "description": "A library that allows you to use the full potential of Discords API to create and operate powerful user bots",
     "main": "src/exports.js",
     "scripts": {
