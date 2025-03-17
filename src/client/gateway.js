@@ -277,6 +277,7 @@ class GatewayHandler extends Events {
                 default: {
                     // Undocumented error
                     this.connectWS(true);
+                    break;
                 }
             }
         });
@@ -304,7 +305,11 @@ class GatewayHandler extends Events {
                 this.client.emit("message", message.data);
 
                 // Next emit a specialized event
-                this.client.emit(def.MessageTypes[message.data.type].toLowerCase(), message.data);
+                if (def.MessageTypes?.[message.data.type]?.length)
+                    this.client.emit(
+                        def.MessageTypes[message.data.type].toLowerCase(),
+                        message.data
+                    );
                 break;
             }
             /*
@@ -331,7 +336,8 @@ class GatewayHandler extends Events {
                 break;
             }
             default: {
-                this.client.emit(message.type.toLowerCase(), message.data);
+                if (message?.type?.length)
+                    this.client.emit(message.type.toLowerCase(), message.data);
                 break;
             }
         }
